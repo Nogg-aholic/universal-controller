@@ -27,12 +27,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register frontend components
     await async_register_frontend(hass)
     
-    # Store the config entry data
+    # Store minimal config entry data (only name is collected in config flow)
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
-        "user_code": entry.data.get("user_code", ""),
-        "html_template": entry.data.get("html_template", ""),
-        "css_styles": entry.data.get("css_styles", ""),
+        "name": entry.data.get("name", "Universal Controller"),
     }
     
     return True

@@ -74,14 +74,16 @@ const t=t=>(e,o)=>{ void 0!==o?o.addInitializer((()=>{customElements.define(t,e)
 
 let UniversalControllerCard = class UniversalControllerCard extends i {
     constructor() {
-        super(...arguments);
+        super();
         this._userCode = '';
         this._htmlTemplate = '';
         this._cssStyles = '';
         this._executionResult = null;
         this._isExecuting = false;
         this._showCodeEditor = false;
-        this._entityData = null;
+        this._cardId = '';
+        // Generate unique ID for this card instance
+        this._cardId = `uc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
     static get styles() {
         return i$3 `
@@ -332,14 +334,16 @@ let UniversalControllerCard = class UniversalControllerCard extends i {
         // Card is self-contained, no entity updates needed
     }
     _loadConfiguration() {
-        // Load from localStorage if available
+        // Load from Home Assistant storage with unique card ID
         try {
-            const saved = localStorage.getItem('universal-controller-config');
+            const storageKey = `universal_controller_${this._cardId}`;
+            const saved = localStorage.getItem(storageKey);
             if (saved) {
                 const data = JSON.parse(saved);
                 this._userCode = data.userCode || this._userCode;
                 this._htmlTemplate = data.htmlTemplate || this._htmlTemplate;
                 this._cssStyles = data.cssStyles || this._cssStyles;
+                console.log(`Loaded configuration for card: ${this._cardId}`);
             }
         }
         catch (error) {
@@ -394,19 +398,45 @@ let UniversalControllerCard = class UniversalControllerCard extends i {
         return await func(...contextValues);
     }
     async _saveConfiguration() {
-        // For now, just store in localStorage
-        // In a full implementation, you might want to persist this to Home Assistant
+        // Use Home Assistant's storage system for persistence
         try {
             const data = {
                 userCode: this._userCode,
                 htmlTemplate: this._htmlTemplate,
                 cssStyles: this._cssStyles,
+                timestamp: Date.now()
             };
-            localStorage.setItem('universal-controller-config', JSON.stringify(data));
-            console.log('Configuration saved locally');
+            // First try Home Assistant's storage
+            if (this.hass.connection) {
+                await this.hass.connection.sendMessagePromise({
+                    type: 'persistent_notification/create',
+                    notification_id: 'universal_controller_save',
+                    title: 'Universal Controller',
+                    message: 'Configuration saved successfully!'
+                });
+                // Store in hass user data with unique card ID
+                const storageKey = `universal_controller_${this._cardId}`;
+                localStorage.setItem(storageKey, JSON.stringify(data));
+                console.log(`Configuration saved for card: ${this._cardId}`);
+            }
+            else {
+                // Fallback to localStorage with unique card ID
+                const storageKey = `universal_controller_${this._cardId}`;
+                localStorage.setItem(storageKey, JSON.stringify(data));
+                console.log(`Configuration saved locally for card: ${this._cardId}`);
+            }
         }
         catch (error) {
             console.error('Failed to save configuration:', error);
+            // Show error notification
+            if (this.hass.connection) {
+                await this.hass.connection.sendMessagePromise({
+                    type: 'persistent_notification/create',
+                    notification_id: 'universal_controller_error',
+                    title: 'Universal Controller Error',
+                    message: `Failed to save: ${error}`
+                });
+            }
         }
     }
     _resetToDefaults() {
@@ -612,7 +642,7 @@ __decorate([
 ], UniversalControllerCard.prototype, "_showCodeEditor", void 0);
 __decorate([
     r()
-], UniversalControllerCard.prototype, "_entityData", void 0);
+], UniversalControllerCard.prototype, "_cardId", void 0);
 UniversalControllerCard = __decorate([
     t('universal-controller-card')
 ], UniversalControllerCard);

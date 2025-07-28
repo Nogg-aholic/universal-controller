@@ -62,7 +62,7 @@ The card will be available immediately - no manual resource registration require
 ### TypeScript/JavaScript Code
 
 ```typescript
-// Zugriff auf alle Home Assistant Entitäten
+// Access all Home Assistant entities
 const lights = Object.values(hass.states).filter(entity => 
     entity.entity_id.startsWith('light.')
 );
@@ -71,7 +71,7 @@ const sensors = Object.values(hass.states).filter(entity =>
     entity.entity_id.startsWith('sensor.')
 );
 
-// Dienste aufrufen
+// Call services
 if (new Date().getHours() >= 18) {
     await hass.callService('light', 'turn_on', {
         entity_id: 'light.living_room',
@@ -80,7 +80,7 @@ if (new Date().getHours() >= 18) {
     });
 }
 
-// Temperatur-basierte Klimasteuerung
+// Temperature-based climate control
 const temperature = parseFloat(hass.states['sensor.temperature']?.state);
 if (temperature > 25) {
     await hass.callService('climate', 'set_temperature', {
@@ -89,7 +89,7 @@ if (temperature > 25) {
     });
 }
 
-// Daten für das Template zurückgeben
+// Return data for the template
 return {
     lights_count: lights.length,
     sensors_count: sensors.length,
@@ -110,27 +110,27 @@ return {
     
     <div class="metrics">
         <div class="metric-card">
-            <span class="label">Lichter</span>
+            <span class="label">Lights</span>
             <span class="value">{{ data.lights_count }}</span>
         </div>
         
         <div class="metric-card">
-            <span class="label">Sensoren</span>
+            <span class="label">Sensors</span>
             <span class="value">{{ data.sensors_count }}</span>
         </div>
         
         <div class="metric-card">
-            <span class="label">Temperatur</span>
+            <span class="label">Temperature</span>
             <span class="value">{{ data.current_temp }}°C</span>
         </div>
     </div>
     
     <div class="actions">
         <button onclick="toggleLights()" class="action-btn">
-            🌟 Lichter umschalten
+            🌟 Toggle Lights
         </button>
         <button onclick="setComfortMode()" class="action-btn">
-            🏠 Komfortmodus
+            🏠 Comfort Mode
         </button>
     </div>
 </div>
@@ -210,35 +210,39 @@ return {
 }
 ```
 
-## 🛠 API
+## 🛠 Technical Details
 
-### Services
+Since v1.2.0, Universal Controller is a **frontend-only integration**:
 
-Die Integration stellt folgende Services zur Verfügung:
+- **No Services**: The integration no longer provides Home Assistant services
+- **No Entities**: No sensor entities are created 
+- **Self-Contained**: The card works standalone with localStorage persistence
+- **Frontend Card**: Served directly from the integration at `/universal_controller/universal-controller-card.js`
+- **Auto-Registration**: Automatically appears in Home Assistant's card picker
 
-- `universal_controller.execute_code`: Code ausführen
-- `universal_controller.update_html`: HTML Template aktualisieren  
-- `universal_controller.update_css`: CSS Styles aktualisieren
+### Card Configuration
 
-### Entität-Attribute
+The card accepts these configuration options:
 
-Die Sensor-Entität speichert:
+```yaml
+type: custom:universal-controller-card
+name: "My Controller"           # Optional: Display name
+user_code: "..."               # Optional: Default TypeScript code
+html_template: "..."           # Optional: Default HTML template  
+css_styles: "..."              # Optional: Default CSS styles
+show_code_editor: true         # Optional: Show code editor tabs
+update_interval: 30000         # Optional: Code execution interval (ms)
+```
 
-- `user_code`: Der TypeScript/JavaScript Code
-- `html_template`: Das HTML Template
-- `css_styles`: Die CSS Styles
-- `last_update`: Zeitstempel der letzten Ausführung
-- `result`: Ergebnis der letzten Code-Ausführung
+## 🎯 Use Cases
 
-## 🎯 Anwendungsfälle
-
-### Klimasteuerung
+### Climate Control
 
 ```typescript
 const temp = parseFloat(hass.states['sensor.outside_temperature'].state);
 const humidity = parseFloat(hass.states['sensor.humidity'].state);
 
-// Intelligente Klimaregelung
+// Smart climate control
 if (temp > 26 && humidity > 70) {
     await hass.callService('climate', 'set_hvac_mode', {
         entity_id: 'climate.living_room',
@@ -249,7 +253,7 @@ if (temp > 26 && humidity > 70) {
 return { temp, humidity, ac_active: temp > 26 };
 ```
 
-### Lichtautomation
+### Light Automation
 
 ```typescript
 const motion = hass.states['binary_sensor.motion'].state === 'on';
@@ -265,13 +269,13 @@ if (motion && lux < 100) {
 return { motion, lux, auto_light: motion && lux < 100 };
 ```
 
-### Energiemanagement
+### Energy Management
 
 ```typescript
 const power = parseFloat(hass.states['sensor.power_consumption'].state);
 const price = parseFloat(hass.states['sensor.electricity_price'].state);
 
-// Energiesparende Geräte bei hohen Preisen
+// Energy-saving devices during high prices
 if (price > 0.30) {
     await hass.callService('switch', 'turn_off', {
         entity_id: 'switch.water_heater'
@@ -285,7 +289,7 @@ return {
 };
 ```
 
-## 🔧 Entwicklung
+## 🔧 Development
 
 ### Build
 
@@ -306,13 +310,13 @@ npm run dev
 npm run serve
 ```
 
-## 📝 Lizenz
+## 📝 License
 
-MIT License - Siehe LICENSE Datei für Details.
+MIT License - See LICENSE file for details.
 
-## 🤝 Beitragen
+## 🤝 Contributing
 
-Pull Requests sind willkommen! Für größere Änderungen öffnen Sie bitte zuerst ein Issue.
+Pull requests are welcome! For major changes, please open an issue first.
 
 ## 📞 Support
 
@@ -321,4 +325,4 @@ Pull Requests sind willkommen! Für größere Änderungen öffnen Sie bitte zuer
 
 ---
 
-**Universal Controller** - Die ultimative Home Assistant Integration für individuellen TypeScript-Code, HTML-Templates und CSS-Styling! 🚀
+**Universal Controller** - The ultimate Home Assistant integration for custom TypeScript code, HTML templates, and CSS styling! 🚀
