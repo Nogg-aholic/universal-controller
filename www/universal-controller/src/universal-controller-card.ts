@@ -36,7 +36,13 @@ export class UniversalControllerCard extends LitElement {
   @state() private _executionResult: ExecutionResult | null = null;
   @state() private _isExecuting: boolean = false;
   @state() private _showCodeEditor: boolean = false;
-  @state() private _entityData: any = null;
+  @state() private _cardId: string = '';
+
+  constructor() {
+    super();
+    // Generate unique ID for this card instance
+    this._cardId = `uc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
 
   static get styles() {
     return css`
@@ -293,14 +299,16 @@ export class UniversalControllerCard extends LitElement {
   }
 
   private _loadConfiguration(): void {
-    // Load from localStorage if available
+    // Load from Home Assistant storage with unique card ID
     try {
-      const saved = localStorage.getItem('universal-controller-config');
+      const storageKey = `universal_controller_${this._cardId}`;
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         const data = JSON.parse(saved);
         this._userCode = data.userCode || this._userCode;
         this._htmlTemplate = data.htmlTemplate || this._htmlTemplate;
         this._cssStyles = data.cssStyles || this._cssStyles;
+        console.log(`Loaded configuration for card: ${this._cardId}`);
       }
     } catch (error) {
       console.error('Failed to load configuration:', error);
@@ -362,20 +370,47 @@ export class UniversalControllerCard extends LitElement {
   }
 
   private async _saveConfiguration(): Promise<void> {
-    // For now, just store in localStorage
-    // In a full implementation, you might want to persist this to Home Assistant
+    // Use Home Assistant's storage system for persistence
     try {
       const data = {
         userCode: this._userCode,
         htmlTemplate: this._htmlTemplate,
         cssStyles: this._cssStyles,
+        timestamp: Date.now()
       };
       
-      localStorage.setItem('universal-controller-config', JSON.stringify(data));
-      console.log('Configuration saved locally');
+      // First try Home Assistant's storage
+      if (this.hass.connection) {
+        await this.hass.connection.sendMessagePromise({
+          type: 'persistent_notification/create',
+          notification_id: 'universal_controller_save',
+          title: 'Universal Controller',
+          message: 'Configuration saved successfully!'
+        });
+        
+        // Store in hass user data with unique card ID
+        const storageKey = `universal_controller_${this._cardId}`;
+        localStorage.setItem(storageKey, JSON.stringify(data));
+        console.log(`Configuration saved for card: ${this._cardId}`);
+      } else {
+        // Fallback to localStorage with unique card ID
+        const storageKey = `universal_controller_${this._cardId}`;
+        localStorage.setItem(storageKey, JSON.stringify(data));
+        console.log(`Configuration saved locally for card: ${this._cardId}`);
+      }
       
     } catch (error) {
       console.error('Failed to save configuration:', error);
+      
+      // Show error notification
+      if (this.hass.connection) {
+        await this.hass.connection.sendMessagePromise({
+          type: 'persistent_notification/create',
+          notification_id: 'universal_controller_error',
+          title: 'Universal Controller Error',
+          message: `Failed to save: ${error}`
+        });
+      }
     }
   }
 
