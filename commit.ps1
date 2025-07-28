@@ -6,10 +6,10 @@ param(
     [string]$Message
 )
 
-Write-Host "📝 Committing: $Message" -ForegroundColor Cyan
+Write-Host "Committing: $Message" -ForegroundColor Cyan
 
 git add .
 git commit -m "$Message"
 git push origin main
 
-Write-Host "✅ Pushed to GitHub" -ForegroundColor Green
+Write-Host "Pushed to GitHub" -ForegroundColor Green

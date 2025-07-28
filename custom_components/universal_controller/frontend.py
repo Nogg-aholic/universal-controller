@@ -56,6 +56,14 @@ class UniversalControllerView(HomeAssistantView):
 async def async_register_frontend(hass: HomeAssistant) -> None:
     """Register the frontend components."""
     try:
+        # Check if the JavaScript file exists
+        integration_dir = os.path.dirname(__file__)
+        js_file_path = os.path.join(integration_dir, "frontend", "universal-controller-card.js")
+        
+        if not os.path.exists(js_file_path):
+            _LOGGER.error(f"Frontend file not found: {js_file_path}")
+            return
+        
         # Register the view to serve the JavaScript file
         view = UniversalControllerView(hass)
         hass.http.register_view(view)
@@ -68,4 +76,5 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
         
     except Exception as e:
         _LOGGER.error(f"Failed to register frontend: {e}")
-        raise
+        # Don't raise the exception - let the integration continue without frontend
+        pass

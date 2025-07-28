@@ -85,9 +85,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Universal Controller from a config entry."""
     _LOGGER.info(f"Setting up Universal Controller entry: {entry.entry_id}")
     
-    # Register frontend components
-    await async_register_frontend(hass)
-    
     # Store the config entry data
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
@@ -97,6 +94,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "html_template": entry.data.get("html_template", ""),
         "css_styles": entry.data.get("css_styles", ""),
     }
+    
+    # Register frontend components (safely)
+    try:
+        await async_register_frontend(hass)
+        _LOGGER.info("Frontend registration successful")
+    except Exception as e:
+        _LOGGER.warning(f"Frontend registration failed: {e}")
+        # Continue without frontend - integration can still work
     
     # Create a data update coordinator
     coordinator = UniversalControllerCoordinator(hass, entry)
