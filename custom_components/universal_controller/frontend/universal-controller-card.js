@@ -195,15 +195,27 @@ class UniversalControllerCard extends HTMLElement {
         }
         
         .rendered-output {
-          margin-top: 16px;
+          margin-bottom: 16px;
           padding: 16px;
           border: 1px solid var(--divider-color);
           border-radius: 8px;
           background: var(--card-background-color);
         }
         
+        /* Scope user CSS to rendered output only */
+        .rendered-output * {
+          box-sizing: border-box;
+        }
+      </style>
+      
+      <style id="user-css">
         /* Apply user CSS styles to rendered output */
-        ${this._cssStyles}
+        ${this._cssStyles ? this._cssStyles.split('}').map(rule => {
+          if (rule.trim() && !rule.includes('.rendered-output')) {
+            return `.rendered-output ${rule.trim()}}`;
+          }
+          return rule + (rule.trim() ? '}' : '');
+        }).join('') : ''}
       </style>
 
       <div class="card-header">
@@ -289,6 +301,9 @@ hass.services.call('light', 'turn_on', {
         <button class="btn btn-primary" onclick="this.getRootNode().host.executeCode()" ${this._isExecuting ? 'disabled' : ''}>
           ${this._isExecuting ? 'Executing...' : 'Execute Code'}
         </button>
+        <button class="btn btn-secondary" onclick="this.getRootNode().host.testRender()">
+          Test Render
+        </button>
         <button class="btn btn-secondary" onclick="this.getRootNode().host.saveConfiguration()">
           Save Configuration
         </button>
@@ -333,6 +348,13 @@ hass.services.call('light', 'turn_on', {
       this._config.user_code = this._userCode;
       this._config.html_template = this._htmlTemplate;
       this._config.css_styles = this._cssStyles;
+      
+      // Fire event to save configuration in Home Assistant
+      this.dispatchEvent(new CustomEvent('config-changed', {
+        detail: { config: { ...this._config } },
+        bubbles: true,
+        composed: true
+      }));
     }
   }
 
@@ -389,10 +411,21 @@ hass.services.call('light', 'turn_on', {
     
     let rendered = template;
     
-    // Simple template variable replacement
-    // Replace {{variable}} with data.variable
-    rendered = rendered.replace(/\{\{(\w+)\}\}/g, (match, key) => {
-      return data[key] !== undefined ? data[key] : match;
+    // Enhanced template variable replacement
+    // Replace {{variable}} with data.variable, supporting nested properties
+    rendered = rendered.replace(/\{\{([^}]+)\}\}/g, (match, key) => {
+      const keys = key.trim().split('.');
+      let value = data;
+      
+      for (const k of keys) {
+        if (value && typeof value === 'object' && k in value) {
+          value = value[k];
+        } else {
+          return match; // Keep original if path not found
+        }
+      }
+      
+      return value !== undefined && value !== null ? String(value) : match;
     });
     
     return rendered;
@@ -402,18 +435,18 @@ hass.services.call('light', 'turn_on', {
     if (!this._hass) return;
 
     try {
-      // Update the card configuration
+      // Update the card configuration first
       this.updateConfig();
       
-      // Fire a custom event to save the card configuration
-      const event = new CustomEvent('config-changed', {
-        detail: { config: this._config },
-        bubbles: true,
-        composed: true
-      });
-      this.dispatchEvent(event);
+      // Force a re-render to show the save is in progress
+      this._executionResult = {
+        success: true,
+        message: 'Saving configuration...',
+        data: null
+      };
+      this.render();
 
-      // Also save to the integration if entity is specified
+      // Save to the integration if entity is specified
       if (this._config.entity) {
         await this._hass.callService('universal_controller', 'execute_code', {
           entity_id: this._config.entity,
@@ -433,7 +466,7 @@ hass.services.call('light', 'turn_on', {
 
       this._executionResult = {
         success: true,
-        message: 'Configuration saved successfully!',
+        message: 'Configuration saved successfully! Card configuration is automatically persisted.',
         data: null
       };
       this.render();
@@ -442,7 +475,38 @@ hass.services.call('light', 'turn_on', {
       console.error('Save error:', error);
       this._executionResult = {
         success: false,
-        message: `Failed to save configuration: ${error.message}`,
+        message: `Failed to save to integration: ${error.message}`,
+        data: null
+      };
+      this.render();
+    }
+  }
+
+  testRender() {
+    // Test the template rendering with sample data
+    if (this._htmlTemplate) {
+      const testData = {
+        temperature: '23.5',
+        unit: '°C',
+        condition: 'sunny',
+        humidity: '65',
+        timestamp: new Date().toLocaleString(),
+        status: 'comfortable',
+        sensor_name: 'Test Sensor',
+        sensor_value: '42',
+        test: 'This is a test'
+      };
+      
+      this._executionResult = {
+        success: true,
+        message: 'Template rendered with test data',
+        data: testData
+      };
+      this.render();
+    } else {
+      this._executionResult = {
+        success: false,
+        message: 'No HTML template to render. Add HTML template first.',
         data: null
       };
       this.render();
