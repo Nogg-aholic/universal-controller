@@ -7,16 +7,17 @@ export default {
   output: {
     file: 'dist/universal-controller-card.js',
     format: 'es',
-    sourcemap: true,
+    sourcemap: false, // Disable sourcemap for production
   },
   plugins: [
-    resolve(),
+    resolve({
+      browser: true,
+    }),
     commonjs(),
     typescript({
       tsconfig: './tsconfig.json',
     }),
   ],
-  external: [
-    /^lit/,
-  ],
+  // Bundle everything for Home Assistant
+  external: [],
 };

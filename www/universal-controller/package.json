@@ -1,10 +1,11 @@
 {
   "name": "universal-controller-card",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Universal Controller Card for Home Assistant with TypeScript code execution",
   "main": "dist/universal-controller-card.js",
   "scripts": {
-    "build": "rollup -c",
+    "build": "rollup -c && npm run copy-to-frontend",
+    "copy-to-frontend": "copy dist\\universal-controller-card.js ..\\..\\custom_components\\universal_controller\\www\\universal-controller-card.js",
     "dev": "rollup -c -w",
     "serve": "web-dev-server --node-resolve --open --watch"
   },

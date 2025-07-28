@@ -10,7 +10,6 @@ interface HomeAssistant {
 
 interface UniversalControllerConfig {
   type: string;
-  entity: string;
   name?: string;
   user_code?: string;
   html_template?: string;
@@ -270,13 +269,16 @@ export class UniversalControllerCard extends LitElement {
     this.config = config;
     this._showCodeEditor = config.show_code_editor ?? true;
     
-    // Initialize with entity data if available
-    this._updateFromEntity();
+    // Initialize with config data
+    this._userCode = config.user_code || '';
+    this._htmlTemplate = config.html_template || '';
+    this._cssStyles = config.css_styles || '';
+    
+    // Load any saved configuration
+    this._loadConfiguration();
   }
 
   protected firstUpdated(): void {
-    this._updateFromEntity();
-    
     // Set up periodic updates
     const interval = this.config.update_interval || 30000;
     setInterval(() => {
@@ -287,28 +289,21 @@ export class UniversalControllerCard extends LitElement {
   }
 
   protected updated(changedProps: PropertyValues): void {
-    if (changedProps.has('hass')) {
-      this._updateFromEntity();
-    }
+    // Card is self-contained, no entity updates needed
   }
 
-  private _updateFromEntity(): void {
-    if (!this.hass || !this.config.entity) return;
-    
-    const entity = this.hass.states[this.config.entity];
-    if (entity) {
-      this._entityData = entity;
-      
-      // Load templates from entity attributes
-      if (entity.attributes.user_code && !this._userCode) {
-        this._userCode = entity.attributes.user_code;
+  private _loadConfiguration(): void {
+    // Load from localStorage if available
+    try {
+      const saved = localStorage.getItem('universal-controller-config');
+      if (saved) {
+        const data = JSON.parse(saved);
+        this._userCode = data.userCode || this._userCode;
+        this._htmlTemplate = data.htmlTemplate || this._htmlTemplate;
+        this._cssStyles = data.cssStyles || this._cssStyles;
       }
-      if (entity.attributes.html_template && !this._htmlTemplate) {
-        this._htmlTemplate = entity.attributes.html_template;
-      }
-      if (entity.attributes.css_styles && !this._cssStyles) {
-        this._cssStyles = entity.attributes.css_styles;
-      }
+    } catch (error) {
+      console.error('Failed to load configuration:', error);
     }
   }
 
@@ -322,7 +317,6 @@ export class UniversalControllerCard extends LitElement {
       const context = {
         hass: this.hass,
         states: this.hass.states,
-        entity: this._entityData,
         console: {
           log: (...args: any[]) => console.log('[Universal Controller]', ...args),
           error: (...args: any[]) => console.error('[Universal Controller]', ...args),
@@ -368,23 +362,17 @@ export class UniversalControllerCard extends LitElement {
   }
 
   private async _saveConfiguration(): Promise<void> {
-    if (!this.config.entity) return;
-    
+    // For now, just store in localStorage
+    // In a full implementation, you might want to persist this to Home Assistant
     try {
-      await this.hass.callService('universal_controller', 'update_html', {
-        entity_id: this.config.entity,
-        html: this._htmlTemplate
-      });
+      const data = {
+        userCode: this._userCode,
+        htmlTemplate: this._htmlTemplate,
+        cssStyles: this._cssStyles,
+      };
       
-      await this.hass.callService('universal_controller', 'update_css', {
-        entity_id: this.config.entity,
-        css: this._cssStyles
-      });
-      
-      await this.hass.callService('universal_controller', 'execute_code', {
-        entity_id: this.config.entity,
-        code: this._userCode
-      });
+      localStorage.setItem('universal-controller-config', JSON.stringify(data));
+      console.log('Configuration saved locally');
       
     } catch (error) {
       console.error('Failed to save configuration:', error);
@@ -541,6 +529,47 @@ return {
   getCardSize(): number {
     return 6;
   }
+
+  // Required for Home Assistant card picker
+  static getConfigElement() {
+    // For now, return null - users can configure in the GUI
+    return null;
+  }
+
+  static getStubConfig() {
+    return {
+      type: 'custom:universal-controller-card',
+      name: 'Universal Controller',
+      user_code: `// TypeScript/JavaScript code that runs periodically
+// Full access to Home Assistant API
+
+const lights = Object.values(hass.states).filter(entity => 
+    entity.entity_id.startsWith('light.')
+);
+
+console.log(\`Found \${lights.length} lights\`);
+
+return {
+    lights_count: lights.length,
+    current_time: new Date().toISOString()
+};`,
+      html_template: `<div class='custom-content'>
+  <h3>Universal Controller</h3>
+  <p>Lights: {{ data.lights_count }}</p>
+  <p>Time: {{ data.current_time }}</p>
+</div>`,
+      css_styles: `.custom-content {
+  padding: 16px;
+  background: var(--card-background-color);
+  border-radius: 8px;
+}
+
+.custom-content h3 {
+  margin: 0 0 8px 0;
+  color: var(--primary-text-color);
+}`
+    };
+  }
 }
 
 // Register the card
@@ -553,7 +582,7 @@ declare global {
 // Register for the card picker
 (window as any).customCards = (window as any).customCards || [];
 (window as any).customCards.push({
-  type: 'universal-controller-card',
+  type: 'custom:universal-controller-card',
   name: 'Universal Controller Card',
   description: 'A customizable card with TypeScript code execution, HTML templates, and CSS styling',
 });

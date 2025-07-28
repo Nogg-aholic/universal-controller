@@ -1,126 +1,63 @@
 # Universal Controller - Home Assistant Custom Integration
 
-Eine universelle Home Assistant Integration, die **drei konfigurierbare Eingabebereiche** bietet:
+A powerful Home Assistant custom integration that provides a universal control card with three configurable areas:
 
-1. **TypeScript/JavaScript Code** - Periodisch ausgeführt mit vollständigem Zugriff auf alle Home Assistant Geräte und Entitäten
-2. **HTML Template** - Für die visuelle Darstellung der Karte
-3. **CSS Styling** - Für die Gestaltung der Karte
+1. **TypeScript/JavaScript Code** - Runs with full access to Home Assistant API
+2. **HTML Template** - For visual card representation  
+3. **CSS Styling** - For card presentation
 
 ## 🌟 Features
 
-- **Live Code-Ausführung**: TypeScript/JavaScript Code der periodisch läuft
-- **Vollständiger HA-Zugriff**: Zugriff auf alle `hass.states`, `hass.services` und mehr
-- **Visuelle Gestaltung**: HTML und CSS direkt im Interface editierbar
-- **Tab-Interface**: Wechsel zwischen Preview, Code, HTML und CSS
-- **Live Preview**: Sofortige Vorschau der Änderungen
-- **Fehlerbehandlung**: Ausführungsfehler werden angezeigt
-- **Persistierung**: Konfiguration wird in Home Assistant gespeichert
+- **Live Code Editor** with TypeScript/JavaScript execution
+- **Full HA Access**: Access to all `hass.states`, `hass.services` and more
+- **Visual Design**: HTML and CSS directly editable in the interface
+- **Tab Interface**: Switch between Preview, Code, HTML and CSS tabs
+- **Live Preview**: Immediate preview of changes
+- **Error Handling**: Execution errors are displayed
+- **Local Storage**: Configuration persisted locally in browser
 
 ## 📁 Installation
 
-### 🏪 HACS Installation (Empfohlen)
+### 🏪 HACS Installation (Recommended)
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Nogg-aholic&repository=universal-controller&category=integration)
 
-1. **HACS öffnen** in Home Assistant
-2. **Integrationen** > **Custom repositories**
-3. **Repository URL** hinzufügen: `https://github.com/Nogg-aholic/universal-controller`
-4. **Kategorie**: Integration
-5. **Universal Controller** suchen und installieren
-6. **Home Assistant neu starten**
+1. **Open HACS** in Home Assistant
+2. **Integrations** > **Custom repositories**
+3. **Add Repository URL**: `https://github.com/Nogg-aholic/universal-controller`
+4. **Category**: Integration
+5. **Search for "Universal Controller"** and install
+6. **Restart Home Assistant**
+7. **Add Integration**: Go to Settings > Integrations > Add Integration > Universal Controller
 
-### ⚠️ **WICHTIG: Frontend-Karte registrieren**
+**The card is automatically served by the integration - no manual resource registration needed!**
 
-Nach der HACS-Installation müssen Sie die Karte manuell registrieren:
+### 🔧 Manual Installation
 
-#### **Option 1: Über Einstellungen (UI)**
-1. **Einstellungen** > **Dashboards** > **Ressourcen**
-2. **"Ressource hinzufügen"**
-3. **URL:** `/local/universal-controller-card.js`
-4. **Ressourcentyp:** `JavaScript Module`
+1. Copy the `custom_components/universal_controller` folder to your Home Assistant `custom_components` directory
+2. Restart Home Assistant  
+3. Add the integration via Settings > Integrations
 
-#### **Option 2: Über configuration.yaml**
-```yaml
-lovelace:
-  resources:
-    - url: /local/universal-controller-card.js
-      type: module
-```
+**The frontend card is automatically served at `/universal_controller/universal-controller-card.js`**
+## � Usage
 
-**Nach dem Hinzufügen der Ressource können Sie die Karte verwenden!**
+### 1. Add Integration
 
-### 🔧 Manuelle Installation
+1. Go to **Settings** > **Integrations**
+2. Click **Add Integration**
+3. Search for "Universal Controller"
+4. Follow the configuration wizard
 
-#### 1. Custom Integration kopieren
+### 2. Add Card to Dashboard
 
-Kopieren Sie den `custom_components/universal_controller` Ordner in Ihr Home Assistant `custom_components` Verzeichnis:
+1. Edit your dashboard
+2. Click **Add Card**
+3. Search for "Universal Controller Card"
+4. Configure the card
 
-```
-homeassistant/
-├── custom_components/
-│   └── universal_controller/
-│       ├── __init__.py
-│       ├── manifest.json
-│       ├── config_flow.py
-│       ├── sensor.py
-│       ├── const.py
-│       └── services.yaml
-```
+The card will be available immediately - no manual resource registration required!
 
-#### 2. Frontend-Karte installieren
-
-Kopieren Sie den `www/universal-controller` Ordner in Ihr Home Assistant `www` Verzeichnis und bauen Sie die Karte:
-
-```bash
-cd www/universal-controller
-npm install
-npm run build
-```
-
-#### 3. Automatische Installation
-
-Verwenden Sie das PowerShell-Installationsskript:
-
-```powershell
-.\install.ps1
-```
-
-#### 4. Karte ist automatisch verfügbar
-
-Die Universal Controller Karte wird automatisch von der Python-Integration bereitgestellt. Keine manuelle Ressourcenregistrierung erforderlich!
-
-**Sie können die Karte sofort in Ihrem Dashboard verwenden:**
-
-1. **Dashboard bearbeiten** und auf "Karte hinzufügen" klicken
-2. **"Universal Controller Card"** suchen und auswählen  
-3. **Karte konfigurieren** mit:
-   - Entity (optional): Verknüpfung zu einem Universal Controller Sensor
-   - Name: Anzeigename für die Karte
-4. **Die drei Tabs verwenden**:
-   - **Code-Tab**: TypeScript/JavaScript-Code mit Zugriff auf Home Assistant
-   - **HTML-Tab**: Benutzerdefinierte HTML-Templates mit Datenbindung
-   - **CSS-Tab**: Styling für Ihre benutzerdefinierten Elemente
-
-## 🚀 Verwendung
-
-### 1. Integration hinzufügen
-
-1. Gehen Sie zu **Einstellungen** > **Integrationen**
-2. Klicken Sie auf **Integration hinzufügen**
-3. Suchen Sie nach "Universal Controller"
-4. Folgen Sie dem Konfigurationsassistenten
-
-### 2. Karte zum Dashboard hinzufügen
-
-```yaml
-type: custom:universal-controller-card
-entity: sensor.universal_controller_ihre_instanz
-name: Mein Universal Controller
-show_code_editor: true
-update_interval: 30000
-```
-
-## 💻 Code-Beispiele
+## 💻 Code Examples
 
 ### TypeScript/JavaScript Code
 

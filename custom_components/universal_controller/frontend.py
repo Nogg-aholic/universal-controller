@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any
+from pathlib import Path
 
 from homeassistant.core import HomeAssistant
 from homeassistant.components.http import HomeAssistantView
@@ -30,9 +30,9 @@ class UniversalControllerView(HomeAssistantView):
     async def get(self, request):
         """Serve the Universal Controller card JavaScript."""
         try:
-            # Get the path to the JavaScript file
+            # Get the path to the JavaScript file within the integration
             integration_dir = os.path.dirname(__file__)
-            js_file_path = os.path.join(integration_dir, "frontend", "universal-controller-card.js")
+            js_file_path = os.path.join(integration_dir, "www", "universal-controller-card.js")
             
             if not os.path.exists(js_file_path):
                 _LOGGER.error(f"Frontend file not found: {js_file_path}")
