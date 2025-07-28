@@ -1,0 +1,62 @@
+execute_code:
+  name: Execute TypeScript/JavaScript Code
+  description: Executes user-provided TypeScript/JavaScript code with full Home Assistant API access
+  fields:
+    entity_id:
+      name: Entity ID
+      description: The Universal Controller entity to execute code for
+      required: true
+      selector:
+        entity:
+          domain: sensor
+          integration: universal_controller
+    code:
+      name: Code
+      description: TypeScript/JavaScript code to execute
+      required: true
+      selector:
+        text:
+          multiline: true
+          type: text
+
+update_html:
+  name: Update HTML Template
+  description: Updates the HTML template for the card display
+  fields:
+    entity_id:
+      name: Entity ID
+      description: The Universal Controller entity to update
+      required: true
+      selector:
+        entity:
+          domain: sensor
+          integration: universal_controller
+    html:
+      name: HTML Template
+      description: HTML template with data binding support
+      required: true
+      selector:
+        text:
+          multiline: true
+          type: text
+
+update_css:
+  name: Update CSS Styles
+  description: Updates the CSS styles for the card display
+  fields:
+    entity_id:
+      name: Entity ID
+      description: The Universal Controller entity to update
+      required: true
+      selector:
+        entity:
+          domain: sensor
+          integration: universal_controller
+    css:
+      name: CSS Styles
+      description: CSS styles for the card presentation
+      required: true
+      selector:
+        text:
+          multiline: true
+          type: text
