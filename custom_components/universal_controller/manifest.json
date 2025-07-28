@@ -1,7 +1,7 @@
 {
   "domain": "universal_controller",
   "name": "Universal Controller",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "documentation": "https://github.com/Nogg-aholic/universal-controller",
   "issue_tracker": "https://github.com/Nogg-aholic/universal-controller/issues",
   "dependencies": [],
