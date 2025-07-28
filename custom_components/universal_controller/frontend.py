@@ -64,8 +64,9 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
         frontend_url = f"{FRONTEND_URL_PATH}/{FRONTEND_FILE_PATH}"
         add_extra_js_url(hass, frontend_url)
         
-        _LOGGER.info(f"Registered Universal Controller frontend at {frontend_url}")
+        _LOGGER.info(f"✅ Registered Universal Controller frontend at {frontend_url}")
+        _LOGGER.info(f"✅ Card should be available as 'custom:universal-controller-card'")
         
     except Exception as e:
-        _LOGGER.error(f"Failed to register frontend: {e}")
+        _LOGGER.error(f"❌ Failed to register frontend: {e}")
         raise

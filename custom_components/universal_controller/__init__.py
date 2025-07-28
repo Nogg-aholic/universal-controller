@@ -21,6 +21,10 @@ STORAGE_KEY = f"{DOMAIN}_configs"
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the Universal Controller integration."""
     _LOGGER.info("Setting up Universal Controller integration")
+    
+    # Register frontend components early
+    await async_register_frontend(hass)
+    
     return True
 
 
@@ -30,9 +34,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     # Initialize storage
     store = storage.Store(hass, STORAGE_VERSION, STORAGE_KEY)
-    
-    # Register frontend components
-    await async_register_frontend(hass)
     
     # Store minimal config entry data and storage reference
     hass.data.setdefault(DOMAIN, {})
