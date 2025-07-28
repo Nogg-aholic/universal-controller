@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import asyncio
+import os
 from datetime import timedelta
 from typing import Any, Dict, Optional
 
@@ -13,6 +14,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.service import async_register_admin_service
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.components.frontend import add_extra_js_url
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,6 +33,20 @@ DEFAULT_UPDATE_INTERVAL = timedelta(seconds=30)
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the Universal Controller integration."""
     _LOGGER.info("Setting up Universal Controller integration")
+    
+    # Register the frontend card automatically
+    try:
+        hass.http.register_static_path(
+            "/hacsfiles/universal-controller", 
+            hass.config.path("custom_components/universal_controller"), 
+            cache_headers=False
+        )
+        
+        # Add the card JS to frontend
+        add_extra_js_url(hass, "/hacsfiles/universal-controller/www/universal-controller-card.js")
+        _LOGGER.info("Universal Controller card registered successfully")
+    except Exception as e:
+        _LOGGER.warning(f"Could not register frontend card: {e}")
     
     # Register services
     async def handle_execute_code(call: ServiceCall) -> None:

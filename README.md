@@ -29,6 +29,26 @@ Eine universelle Home Assistant Integration, die **drei konfigurierbare Eingabeb
 5. **Universal Controller** suchen und installieren
 6. **Home Assistant neu starten**
 
+### ⚠️ **WICHTIG: Frontend-Karte registrieren**
+
+Nach der HACS-Installation müssen Sie die Karte manuell registrieren:
+
+#### **Option 1: Über Einstellungen (UI)**
+1. **Einstellungen** > **Dashboards** > **Ressourcen**
+2. **"Ressource hinzufügen"**
+3. **URL:** `/hacsfiles/universal-controller/www/universal-controller-card.js`
+4. **Ressourcentyp:** `JavaScript Module`
+
+#### **Option 2: Über configuration.yaml**
+```yaml
+lovelace:
+  resources:
+    - url: /hacsfiles/universal-controller/www/universal-controller-card.js
+      type: module
+```
+
+**Nach dem Hinzufügen der Ressource können Sie die Karte verwenden!**
+
 ### 🔧 Manuelle Installation
 
 #### 1. Custom Integration kopieren
