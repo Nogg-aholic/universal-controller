@@ -334,7 +334,42 @@ let UniversalControllerCard = class UniversalControllerCard extends i {
         // Card is self-contained, no entity updates needed
     }
     _loadConfiguration() {
-        // Load from Home Assistant storage with unique card ID
+        // Set up event listener for service response
+        const handleConfigLoaded = (event) => {
+            if (event.detail.card_id === this._cardId) {
+                const config = event.detail.config;
+                this._userCode = config.user_code || this._userCode;
+                this._htmlTemplate = config.html_template || this._htmlTemplate;
+                this._cssStyles = config.css_styles || this._cssStyles;
+                console.log(`Loaded configuration via service for card: ${this._cardId}`);
+                this.requestUpdate();
+                // Remove event listener after handling
+                this.hass.connection?.removeEventListener('universal_controller_config_loaded', handleConfigLoaded);
+            }
+        };
+        try {
+            // Try to load via service first
+            if (this.hass && this.hass.callService) {
+                // Add event listener for the service response
+                this.hass.connection?.addEventListener('universal_controller_config_loaded', handleConfigLoaded);
+                this.hass.callService('universal_controller', 'load_config', {
+                    card_id: this._cardId
+                }).catch((error) => {
+                    console.warn('Service load failed, trying localStorage:', error);
+                    this._loadFromLocalStorage();
+                });
+            }
+            else {
+                this._loadFromLocalStorage();
+            }
+        }
+        catch (error) {
+            console.warn('Failed to load via service, trying localStorage:', error);
+            this._loadFromLocalStorage();
+        }
+    }
+    _loadFromLocalStorage() {
+        // Fallback to localStorage
         try {
             const storageKey = `universal_controller_${this._cardId}`;
             const saved = localStorage.getItem(storageKey);
@@ -343,11 +378,11 @@ let UniversalControllerCard = class UniversalControllerCard extends i {
                 this._userCode = data.userCode || this._userCode;
                 this._htmlTemplate = data.htmlTemplate || this._htmlTemplate;
                 this._cssStyles = data.cssStyles || this._cssStyles;
-                console.log(`Loaded configuration for card: ${this._cardId}`);
+                console.log(`Loaded configuration from localStorage for card: ${this._cardId}`);
             }
         }
         catch (error) {
-            console.error('Failed to load configuration:', error);
+            console.error('Failed to load from localStorage:', error);
         }
     }
     async _executeCode() {
@@ -398,44 +433,50 @@ let UniversalControllerCard = class UniversalControllerCard extends i {
         return await func(...contextValues);
     }
     async _saveConfiguration() {
-        // Use Home Assistant's storage system for persistence
+        // Use Universal Controller service for persistence
         try {
-            const data = {
-                userCode: this._userCode,
-                htmlTemplate: this._htmlTemplate,
-                cssStyles: this._cssStyles,
-                timestamp: Date.now()
-            };
-            // First try Home Assistant's storage
+            await this.hass.callService('universal_controller', 'save_config', {
+                card_id: this._cardId,
+                user_code: this._userCode,
+                html_template: this._htmlTemplate,
+                css_styles: this._cssStyles
+            });
+            console.log(`Configuration saved via service for card: ${this._cardId}`);
+            // Show success notification
             if (this.hass.connection) {
                 await this.hass.connection.sendMessagePromise({
                     type: 'persistent_notification/create',
-                    notification_id: 'universal_controller_save',
+                    notification_id: `universal_controller_save_${this._cardId}`,
                     title: 'Universal Controller',
                     message: 'Configuration saved successfully!'
                 });
-                // Store in hass user data with unique card ID
-                const storageKey = `universal_controller_${this._cardId}`;
-                localStorage.setItem(storageKey, JSON.stringify(data));
-                console.log(`Configuration saved for card: ${this._cardId}`);
-            }
-            else {
-                // Fallback to localStorage with unique card ID
-                const storageKey = `universal_controller_${this._cardId}`;
-                localStorage.setItem(storageKey, JSON.stringify(data));
-                console.log(`Configuration saved locally for card: ${this._cardId}`);
             }
         }
         catch (error) {
-            console.error('Failed to save configuration:', error);
-            // Show error notification
-            if (this.hass.connection) {
-                await this.hass.connection.sendMessagePromise({
-                    type: 'persistent_notification/create',
-                    notification_id: 'universal_controller_error',
-                    title: 'Universal Controller Error',
-                    message: `Failed to save: ${error}`
-                });
+            console.error('Failed to save configuration via service:', error);
+            // Fallback to localStorage
+            try {
+                const data = {
+                    userCode: this._userCode,
+                    htmlTemplate: this._htmlTemplate,
+                    cssStyles: this._cssStyles,
+                    timestamp: Date.now()
+                };
+                const storageKey = `universal_controller_${this._cardId}`;
+                localStorage.setItem(storageKey, JSON.stringify(data));
+                console.log(`Configuration saved to localStorage for card: ${this._cardId}`);
+            }
+            catch (fallbackError) {
+                console.error('Failed to save to localStorage:', fallbackError);
+                // Show error notification
+                if (this.hass.connection) {
+                    await this.hass.connection.sendMessagePromise({
+                        type: 'persistent_notification/create',
+                        notification_id: `universal_controller_error_${this._cardId}`,
+                        title: 'Universal Controller Error',
+                        message: `Failed to save: ${error}`
+                    });
+                }
             }
         }
     }

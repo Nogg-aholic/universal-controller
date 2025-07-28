@@ -2,16 +2,20 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.helpers import storage
 
 from .frontend import async_register_frontend
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-DOMAIN = "universal_controller"
+STORAGE_VERSION = 1
+STORAGE_KEY = f"{DOMAIN}_configs"
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -24,23 +28,104 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Universal Controller from a config entry."""
     _LOGGER.info(f"Setting up Universal Controller entry: {entry.entry_id}")
     
+    # Initialize storage
+    store = storage.Store(hass, STORAGE_VERSION, STORAGE_KEY)
+    
     # Register frontend components
     await async_register_frontend(hass)
     
-    # Store minimal config entry data (only name is collected in config flow)
+    # Store minimal config entry data and storage reference
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
         "name": entry.data.get("name", "Universal Controller"),
+        "store": store,
     }
     
+    # Register services
+    await _async_register_services(hass, store)
+    
     return True
+
+
+async def _async_register_services(hass: HomeAssistant, store: storage.Store) -> None:
+    """Register Universal Controller services."""
+    
+    async def save_config(call: ServiceCall) -> None:
+        """Save configuration for a Universal Controller card."""
+        card_id = call.data.get("card_id")
+        user_code = call.data.get("user_code", "")
+        html_template = call.data.get("html_template", "")
+        css_styles = call.data.get("css_styles", "")
+        
+        if not card_id:
+            _LOGGER.error("No card_id provided for save_config service")
+            return
+            
+        # Load existing data
+        data = await store.async_load() or {}
+        
+        # Save new config
+        data[card_id] = {
+            "user_code": user_code,
+            "html_template": html_template,
+            "css_styles": css_styles,
+            "timestamp": hass.loop.time(),
+        }
+        
+        await store.async_save(data)
+        _LOGGER.info(f"Saved configuration for card: {card_id}")
+    
+    async def load_config(call: ServiceCall) -> None:
+        """Load configuration for a Universal Controller card."""
+        card_id = call.data.get("card_id")
+        
+        if not card_id:
+            _LOGGER.error("No card_id provided for load_config service")
+            return
+            
+        data = await store.async_load() or {}
+        config = data.get(card_id, {})
+        
+        _LOGGER.info(f"Loaded configuration for card: {card_id}")
+        
+        # Fire event with the loaded configuration
+        hass.bus.async_fire("universal_controller_config_loaded", {
+            "card_id": card_id,
+            "config": config
+        })
+    
+    async def get_all_configs(call: ServiceCall) -> None:
+        """Get all stored configurations."""
+        data = await store.async_load() or {}
+        
+        _LOGGER.info(f"Retrieved {len(data)} stored configurations")
+        
+        # Fire event with all configurations
+        hass.bus.async_fire("universal_controller_all_configs", {
+            "configs": data
+        })
+    
+    # Register services
+    hass.services.async_register(DOMAIN, "save_config", save_config)
+    hass.services.async_register(DOMAIN, "load_config", load_config)
+    hass.services.async_register(DOMAIN, "get_all_configs", get_all_configs)
+    
+    _LOGGER.info("Universal Controller services registered")
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     _LOGGER.info(f"Unloading Universal Controller entry: {entry.entry_id}")
     
+    # Remove services when last entry is unloaded
     if DOMAIN in hass.data:
         hass.data[DOMAIN].pop(entry.entry_id, None)
+        
+        # If no more entries, remove services
+        if not hass.data[DOMAIN]:
+            hass.services.async_remove(DOMAIN, "save_config")
+            hass.services.async_remove(DOMAIN, "load_config") 
+            hass.services.async_remove(DOMAIN, "get_all_configs")
+            _LOGGER.info("Universal Controller services removed")
     
     return True
