@@ -1,8 +1,8 @@
 {
   "name": "Universal Controller",
   "content_in_root": false,
-  "filename": "universal_controller.zip",
+  "filename": "universal-controller.zip",
   "hide_default_branch": false,
   "render_readme": true,
-  "zip_release": true
+  "zip_release": false
 }
