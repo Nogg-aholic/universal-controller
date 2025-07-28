@@ -36,14 +36,14 @@ Nach der HACS-Installation müssen Sie die Karte manuell registrieren:
 #### **Option 1: Über Einstellungen (UI)**
 1. **Einstellungen** > **Dashboards** > **Ressourcen**
 2. **"Ressource hinzufügen"**
-3. **URL:** `/hacsfiles/universal-controller/www/universal-controller-card.js`
+3. **URL:** `/local/universal-controller-card.js`
 4. **Ressourcentyp:** `JavaScript Module`
 
 #### **Option 2: Über configuration.yaml**
 ```yaml
 lovelace:
   resources:
-    - url: /hacsfiles/universal-controller/www/universal-controller-card.js
+    - url: /local/universal-controller-card.js
       type: module
 ```
 
@@ -85,16 +85,21 @@ Verwenden Sie das PowerShell-Installationsskript:
 .\install.ps1
 ```
 
-#### 4. Karte registrieren
+#### 4. Karte ist automatisch verfügbar
 
-Fügen Sie die Karte zu Ihrer `configuration.yaml` hinzu:
+Die Universal Controller Karte wird automatisch von der Python-Integration bereitgestellt. Keine manuelle Ressourcenregistrierung erforderlich!
 
-```yaml
-lovelace:
-  resources:
-    - url: /local/universal-controller/dist/universal-controller-card.js
-      type: module
-```
+**Sie können die Karte sofort in Ihrem Dashboard verwenden:**
+
+1. **Dashboard bearbeiten** und auf "Karte hinzufügen" klicken
+2. **"Universal Controller Card"** suchen und auswählen  
+3. **Karte konfigurieren** mit:
+   - Entity (optional): Verknüpfung zu einem Universal Controller Sensor
+   - Name: Anzeigename für die Karte
+4. **Die drei Tabs verwenden**:
+   - **Code-Tab**: TypeScript/JavaScript-Code mit Zugriff auf Home Assistant
+   - **HTML-Tab**: Benutzerdefinierte HTML-Templates mit Datenbindung
+   - **CSS-Tab**: Styling für Ihre benutzerdefinierten Elemente
 
 ## 🚀 Verwendung
 

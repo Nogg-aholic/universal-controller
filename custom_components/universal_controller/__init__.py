@@ -16,6 +16,8 @@ from homeassistant.helpers.service import async_register_admin_service
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.components.frontend import add_extra_js_url
 
+from .frontend import async_register_frontend
+
 _LOGGER = logging.getLogger(__name__)
 
 DOMAIN = "universal_controller"
@@ -33,20 +35,6 @@ DEFAULT_UPDATE_INTERVAL = timedelta(seconds=30)
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the Universal Controller integration."""
     _LOGGER.info("Setting up Universal Controller integration")
-    
-    # Register the frontend card automatically
-    try:
-        hass.http.register_static_path(
-            "/hacsfiles/universal-controller", 
-            hass.config.path("custom_components/universal_controller"), 
-            cache_headers=False
-        )
-        
-        # Add the card JS to frontend
-        add_extra_js_url(hass, "/hacsfiles/universal-controller/www/universal-controller-card.js")
-        _LOGGER.info("Universal Controller card registered successfully")
-    except Exception as e:
-        _LOGGER.warning(f"Could not register frontend card: {e}")
     
     # Register services
     async def handle_execute_code(call: ServiceCall) -> None:
@@ -96,6 +84,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Universal Controller from a config entry."""
     _LOGGER.info(f"Setting up Universal Controller entry: {entry.entry_id}")
+    
+    # Register frontend components
+    await async_register_frontend(hass)
     
     # Store the config entry data
     hass.data.setdefault(DOMAIN, {})
