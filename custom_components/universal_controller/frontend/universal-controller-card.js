@@ -210,12 +210,7 @@ class UniversalControllerCard extends HTMLElement {
       
       <style id="user-css">
         /* Apply user CSS styles to rendered output */
-        ${this._cssStyles ? this._cssStyles.split('}').map(rule => {
-          if (rule.trim() && !rule.includes('.rendered-output')) {
-            return `.rendered-output ${rule.trim()}}`;
-          }
-          return rule + (rule.trim() ? '}' : '');
-        }).join('') : ''}
+        ${this.getScopedCSS()}
       </style>
 
       <div class="card-header">
@@ -394,6 +389,18 @@ hass.services.call('light', 'turn_on', {
       this._isExecuting = false;
       this.render(); // Re-render to show results and HTML template
     }
+  }
+
+  getScopedCSS() {
+    if (!this._cssStyles) return '';
+    
+    return this._cssStyles.split('}').map(rule => {
+      const trimmed = rule.trim();
+      if (trimmed && !trimmed.includes('.rendered-output')) {
+        return `.rendered-output ${trimmed}}`;
+      }
+      return rule + (trimmed ? '}' : '');
+    }).join('');
   }
 
   async safeExecuteCode(code, context) {
