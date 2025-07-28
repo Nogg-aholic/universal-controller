@@ -25,7 +25,10 @@ interface ExecutionResult {
   timestamp: number;
 }
 
-@customElement('universal-controller-card')
+// Card registration constants
+const CARD_NAME = 'universal-controller-card';
+
+@customElement(CARD_NAME)
 export class UniversalControllerCard extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
   @property({ attribute: false }) public config!: UniversalControllerConfig;
@@ -654,14 +657,15 @@ return {
 // Register the card
 declare global {
   interface HTMLElementTagNameMap {
-    'universal-controller-card': UniversalControllerCard;
+    [CARD_NAME]: UniversalControllerCard;
   }
 }
 
 // Register for the card picker
 (window as any).customCards = (window as any).customCards || [];
 (window as any).customCards.push({
-  type: 'universal-controller-card',
+  type: CARD_NAME,
   name: 'Universal Controller Card',
+  preview: false,
   description: 'A customizable card with TypeScript code execution, HTML templates, and CSS styling',
 });

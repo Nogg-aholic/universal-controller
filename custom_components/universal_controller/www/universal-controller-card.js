@@ -72,6 +72,8 @@ const t=t=>(e,o)=>{ void 0!==o?o.addInitializer((()=>{customElements.define(t,e)
  * SPDX-License-Identifier: BSD-3-Clause
  */function r(r){return n({...r,state:true,attribute:false})}
 
+// Card registration constants
+const CARD_NAME = 'universal-controller-card';
 let UniversalControllerCard = class UniversalControllerCard extends i {
     constructor() {
         super();
@@ -685,13 +687,14 @@ __decorate([
     r()
 ], UniversalControllerCard.prototype, "_cardId", void 0);
 UniversalControllerCard = __decorate([
-    t('universal-controller-card')
+    t(CARD_NAME)
 ], UniversalControllerCard);
 // Register for the card picker
 window.customCards = window.customCards || [];
 window.customCards.push({
-    type: 'universal-controller-card',
+    type: CARD_NAME,
     name: 'Universal Controller Card',
+    preview: false,
     description: 'A customizable card with TypeScript code execution, HTML templates, and CSS styling',
 });
 
