@@ -74,14 +74,16 @@ const t=t=>(e,o)=>{ void 0!==o?o.addInitializer((()=>{customElements.define(t,e)
 
 let UniversalControllerCard = class UniversalControllerCard extends i {
     constructor() {
-        super(...arguments);
+        super();
         this._userCode = '';
         this._htmlTemplate = '';
         this._cssStyles = '';
         this._executionResult = null;
         this._isExecuting = false;
         this._showCodeEditor = false;
-        this._entityData = null;
+        this._cardId = '';
+        // Generate unique ID for this card instance
+        this._cardId = `uc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
     static get styles() {
         return i$3 `
@@ -332,18 +334,55 @@ let UniversalControllerCard = class UniversalControllerCard extends i {
         // Card is self-contained, no entity updates needed
     }
     _loadConfiguration() {
-        // Load from localStorage if available
+        // Set up event listener for service response
+        const handleConfigLoaded = (event) => {
+            if (event.detail.card_id === this._cardId) {
+                const config = event.detail.config;
+                this._userCode = config.user_code || this._userCode;
+                this._htmlTemplate = config.html_template || this._htmlTemplate;
+                this._cssStyles = config.css_styles || this._cssStyles;
+                console.log(`Loaded configuration via service for card: ${this._cardId}`);
+                this.requestUpdate();
+                // Remove event listener after handling
+                this.hass.connection?.removeEventListener('universal_controller_config_loaded', handleConfigLoaded);
+            }
+        };
         try {
-            const saved = localStorage.getItem('universal-controller-config');
+            // Try to load via service first
+            if (this.hass && this.hass.callService) {
+                // Add event listener for the service response
+                this.hass.connection?.addEventListener('universal_controller_config_loaded', handleConfigLoaded);
+                this.hass.callService('universal_controller', 'load_config', {
+                    card_id: this._cardId
+                }).catch((error) => {
+                    console.warn('Service load failed, trying localStorage:', error);
+                    this._loadFromLocalStorage();
+                });
+            }
+            else {
+                this._loadFromLocalStorage();
+            }
+        }
+        catch (error) {
+            console.warn('Failed to load via service, trying localStorage:', error);
+            this._loadFromLocalStorage();
+        }
+    }
+    _loadFromLocalStorage() {
+        // Fallback to localStorage
+        try {
+            const storageKey = `universal_controller_${this._cardId}`;
+            const saved = localStorage.getItem(storageKey);
             if (saved) {
                 const data = JSON.parse(saved);
                 this._userCode = data.userCode || this._userCode;
                 this._htmlTemplate = data.htmlTemplate || this._htmlTemplate;
                 this._cssStyles = data.cssStyles || this._cssStyles;
+                console.log(`Loaded configuration from localStorage for card: ${this._cardId}`);
             }
         }
         catch (error) {
-            console.error('Failed to load configuration:', error);
+            console.error('Failed to load from localStorage:', error);
         }
     }
     async _executeCode() {
@@ -394,19 +433,51 @@ let UniversalControllerCard = class UniversalControllerCard extends i {
         return await func(...contextValues);
     }
     async _saveConfiguration() {
-        // For now, just store in localStorage
-        // In a full implementation, you might want to persist this to Home Assistant
+        // Use Universal Controller service for persistence
         try {
-            const data = {
-                userCode: this._userCode,
-                htmlTemplate: this._htmlTemplate,
-                cssStyles: this._cssStyles,
-            };
-            localStorage.setItem('universal-controller-config', JSON.stringify(data));
-            console.log('Configuration saved locally');
+            await this.hass.callService('universal_controller', 'save_config', {
+                card_id: this._cardId,
+                user_code: this._userCode,
+                html_template: this._htmlTemplate,
+                css_styles: this._cssStyles
+            });
+            console.log(`Configuration saved via service for card: ${this._cardId}`);
+            // Show success notification
+            if (this.hass.connection) {
+                await this.hass.connection.sendMessagePromise({
+                    type: 'persistent_notification/create',
+                    notification_id: `universal_controller_save_${this._cardId}`,
+                    title: 'Universal Controller',
+                    message: 'Configuration saved successfully!'
+                });
+            }
         }
         catch (error) {
-            console.error('Failed to save configuration:', error);
+            console.error('Failed to save configuration via service:', error);
+            // Fallback to localStorage
+            try {
+                const data = {
+                    userCode: this._userCode,
+                    htmlTemplate: this._htmlTemplate,
+                    cssStyles: this._cssStyles,
+                    timestamp: Date.now()
+                };
+                const storageKey = `universal_controller_${this._cardId}`;
+                localStorage.setItem(storageKey, JSON.stringify(data));
+                console.log(`Configuration saved to localStorage for card: ${this._cardId}`);
+            }
+            catch (fallbackError) {
+                console.error('Failed to save to localStorage:', fallbackError);
+                // Show error notification
+                if (this.hass.connection) {
+                    await this.hass.connection.sendMessagePromise({
+                        type: 'persistent_notification/create',
+                        notification_id: `universal_controller_error_${this._cardId}`,
+                        title: 'Universal Controller Error',
+                        message: `Failed to save: ${error}`
+                    });
+                }
+            }
         }
     }
     _resetToDefaults() {
@@ -612,14 +683,14 @@ __decorate([
 ], UniversalControllerCard.prototype, "_showCodeEditor", void 0);
 __decorate([
     r()
-], UniversalControllerCard.prototype, "_entityData", void 0);
+], UniversalControllerCard.prototype, "_cardId", void 0);
 UniversalControllerCard = __decorate([
     t('universal-controller-card')
 ], UniversalControllerCard);
 // Register for the card picker
 window.customCards = window.customCards || [];
 window.customCards.push({
-    type: 'custom:universal-controller-card',
+    type: 'universal-controller-card',
     name: 'Universal Controller Card',
     description: 'A customizable card with TypeScript code execution, HTML templates, and CSS styling',
 });

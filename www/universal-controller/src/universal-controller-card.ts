@@ -661,7 +661,7 @@ declare global {
 // Register for the card picker
 (window as any).customCards = (window as any).customCards || [];
 (window as any).customCards.push({
-  type: 'custom:universal-controller-card',
+  type: 'universal-controller-card',
   name: 'Universal Controller Card',
   description: 'A customizable card with TypeScript code execution, HTML templates, and CSS styling',
 });

@@ -690,7 +690,7 @@ UniversalControllerCard = __decorate([
 // Register for the card picker
 window.customCards = window.customCards || [];
 window.customCards.push({
-    type: 'custom:universal-controller-card',
+    type: 'universal-controller-card',
     name: 'Universal Controller Card',
     description: 'A customizable card with TypeScript code execution, HTML templates, and CSS styling',
 });
