@@ -49,7 +49,8 @@ Write-Host "🎯 New version: $newVersion" -ForegroundColor Green
 # Update manifest.json
 Write-Host "📝 Updating manifest.json..." -ForegroundColor Blue
 $manifest.version = $newVersion
-$manifest | ConvertTo-Json -Depth 10 | Set-Content $manifestPath -Encoding UTF8
+$json = $manifest | ConvertTo-Json -Depth 10 -Compress
+$json | Set-Content $manifestPath -Encoding UTF8
 
 # Check if there are any changes to commit
 $gitStatus = git status --porcelain

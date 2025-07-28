@@ -23,7 +23,8 @@ Write-Host "🔄 $current → $new" -ForegroundColor Cyan
 
 # Update manifest
 $manifest.version = $new
-$manifest | ConvertTo-Json -Depth 10 | Set-Content "custom_components\universal_controller\manifest.json" -Encoding UTF8
+$json = $manifest | ConvertTo-Json -Depth 10 -Compress
+$json | Set-Content "custom_components\universal_controller\manifest.json" -Encoding UTF8
 
 # Git operations
 git add .
