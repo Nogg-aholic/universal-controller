@@ -1,6 +1,155 @@
+create_ticker:
+  name: Create Universal Controller Ticker
+  description: Create a new Universal Controller service instance that runs as a background ticker
+  fields:
+    ticker_id:
+      name: Ticker ID
+      description: Unique identifier for this ticker instance
+      required: true
+      selector:
+        text:
+    name:
+      name: Ticker Name
+      description: Human-readable name for this ticker
+      required: true
+      selector:
+        text:
+    user_code:
+      name: User Code
+      description: TypeScript/JavaScript code to execute periodically
+      required: false
+      default: "// TypeScript/JavaScript code that runs periodically\n// Full access to Home Assistant API\n\nconsole.log('Ticker running:', new Date().toISOString());\n\nreturn {\n  message: 'Hello from Universal Controller!',\n  timestamp: new Date().toISOString()\n};"
+      selector:
+        text:
+          multiline: true
+    html_template:
+      name: HTML Template
+      description: HTML template for card display (optional)
+      required: false
+      default: "<div>\n  <h3>{{data.message}}</h3>\n  <p>Last updated: {{data.timestamp}}</p>\n</div>"
+      selector:
+        text:
+          multiline: true
+    css_styles:
+      name: CSS Styles
+      description: CSS styles for card presentation (optional)
+      required: false
+      default: "div { padding: 16px; }\nh3 { color: var(--primary-text-color); }\np { color: var(--secondary-text-color); }"
+      selector:
+        text:
+          multiline: true
+    update_interval:
+      name: Update Interval (seconds)
+      description: How often to execute the code (minimum 1 second)
+      required: false
+      default: 30
+      selector:
+        number:
+          min: 1
+          max: 3600
+          step: 1
+    enabled:
+      name: Enabled
+      description: Whether this ticker should run automatically
+      required: false
+      default: true
+      selector:
+        boolean:
+
+update_ticker:
+  name: Update Universal Controller Ticker
+  description: Update configuration for an existing ticker
+  fields:
+    ticker_id:
+      name: Ticker ID
+      description: Unique identifier for the ticker to update
+      required: true
+      selector:
+        text:
+    name:
+      name: Ticker Name
+      description: Human-readable name for this ticker
+      required: false
+      selector:
+        text:
+    user_code:
+      name: User Code
+      description: TypeScript/JavaScript code to execute periodically
+      required: false
+      selector:
+        text:
+          multiline: true
+    html_template:
+      name: HTML Template
+      description: HTML template for card display
+      required: false
+      selector:
+        text:
+          multiline: true
+    css_styles:
+      name: CSS Styles
+      description: CSS styles for card presentation
+      required: false
+      selector:
+        text:
+          multiline: true
+    update_interval:
+      name: Update Interval (seconds)
+      description: How often to execute the code (minimum 1 second)
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 3600
+          step: 1
+    enabled:
+      name: Enabled
+      description: Whether this ticker should run automatically
+      required: false
+      selector:
+        boolean:
+
+delete_ticker:
+  name: Delete Universal Controller Ticker
+  description: Delete a ticker instance
+  fields:
+    ticker_id:
+      name: Ticker ID
+      description: Unique identifier for the ticker to delete
+      required: true
+      selector:
+        text:
+
+get_ticker:
+  name: Get Universal Controller Ticker
+  description: Get configuration and status for a specific ticker
+  fields:
+    ticker_id:
+      name: Ticker ID
+      description: Unique identifier for the ticker
+      required: true
+      selector:
+        text:
+
+list_tickers:
+  name: List Universal Controller Tickers
+  description: Get all ticker configurations and their current status
+  fields: {}
+
+execute_ticker:
+  name: Execute Universal Controller Ticker
+  description: Manually execute a ticker's code immediately
+  fields:
+    ticker_id:
+      name: Ticker ID
+      description: Unique identifier for the ticker to execute
+      required: true
+      selector:
+        text:
+
 save_config:
-  name: Save Configuration
-  description: Save configuration for a Universal Controller card
+  name: Save Configuration (Legacy)
+  description: "[DEPRECATED] Use create_ticker or update_ticker instead"
   fields:
     card_id:
       name: Card ID
@@ -31,8 +180,8 @@ save_config:
           multiline: true
 
 load_config:
-  name: Load Configuration
-  description: Load configuration for a Universal Controller card
+  name: Load Configuration (Legacy)
+  description: "[DEPRECATED] Use get_ticker instead"
   fields:
     card_id:
       name: Card ID
@@ -42,8 +191,8 @@ load_config:
         text:
 
 get_all_configs:
-  name: Get All Configurations
-  description: Retrieve all stored Universal Controller configurations
+  name: Get All Configurations (Legacy)
+  description: "[DEPRECATED] Use list_tickers instead"
   fields: {}
 
 register_frontend:

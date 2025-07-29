@@ -11,6 +11,7 @@ interface HomeAssistant {
 interface UniversalControllerConfig {
   type: string;
   name?: string;
+  ticker_id?: string; // NEW: Connect to a ticker service
   user_code?: string;
   html_template?: string;
   css_styles?: string;
@@ -861,7 +862,7 @@ class UniversalControllerCardEditor extends LitElement {
 }
 
 console.info(
-  `%c  UNIVERSAL-CONTROLLER-CARD  \n%c Version 1.3.7 `,
+  `%c  UNIVERSAL-CONTROLLER-CARD  \n%c Version 1.4.0 `,
   'color: orange; font-weight: bold; background: black',
   'color: white; font-weight: bold; background: dimgray',
 );
