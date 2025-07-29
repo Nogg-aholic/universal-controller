@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.3.7] - 2025-07-29
+
+### Added
+- Configurable card width (1/4, 1/2, 3/4, full width)
+- Configurable card height (1-10 grid rows)
+- Configurable update interval through UI
+- Card configuration editor for easy setup
+- Dynamic CSS styling based on card width configuration
+
+### Fixed
+- Configuration loading timing issues that caused defaults to override saved settings
+- Card sizing now properly integrates with Home Assistant grid layout
+- Improved configuration persistence reliability
+
+### Enhanced
+- Better user experience with immediate configuration application
+- Added comprehensive card configuration options
+- Improved frontend registration stability
+
 ## [1.0.0] - 2025-07-28
 
 ### Added

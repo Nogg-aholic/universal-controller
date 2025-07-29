@@ -16,6 +16,8 @@ interface UniversalControllerConfig {
   css_styles?: string;
   show_code_editor?: boolean;
   update_interval?: number;
+  card_width?: '1/4' | '2/4' | '3/4' | '4/4' | 'auto';
+  card_height?: number; // Grid rows (1-10)
 }
 
 interface ExecutionResult {
@@ -53,6 +55,24 @@ export class UniversalControllerCard extends LitElement {
       :host {
         display: block;
         padding: 16px;
+        /* Dynamic width based on configuration */
+        width: var(--card-width, auto);
+      }
+
+      :host([data-width="1/4"]) {
+        width: 25%;
+      }
+
+      :host([data-width="2/4"]) {
+        width: 50%;
+      }
+
+      :host([data-width="3/4"]) {
+        width: 75%;
+      }
+
+      :host([data-width="4/4"]) {
+        width: 100%;
       }
 
       .card-header {
@@ -279,12 +299,8 @@ export class UniversalControllerCard extends LitElement {
     this.config = config;
     this._showCodeEditor = config.show_code_editor ?? true;
     
-    // Initialize with config data
-    this._userCode = config.user_code || '';
-    this._htmlTemplate = config.html_template || '';
-    this._cssStyles = config.css_styles || '';
-    
-    // Load any saved configuration
+    // DON'T initialize with config defaults yet - wait for saved config first
+    // Load saved configuration immediately
     this._loadConfiguration();
   }
 
@@ -300,17 +316,35 @@ export class UniversalControllerCard extends LitElement {
 
   protected updated(changedProps: PropertyValues): void {
     // Card is self-contained, no entity updates needed
+    
+    if (changedProps.has('config')) {
+      // Update width attribute for CSS styling
+      if (this.config?.card_width) {
+        this.setAttribute('data-width', this.config.card_width);
+      }
+    }
   }
 
   private _loadConfiguration(): void {
+    console.log(`Loading configuration for card: ${this._cardId}`);
+    
     // Set up event listener for service response
     const handleConfigLoaded = (event: any) => {
       if (event.detail.card_id === this._cardId) {
         const config = event.detail.config;
-        this._userCode = config.user_code || this._userCode;
-        this._htmlTemplate = config.html_template || this._htmlTemplate;
-        this._cssStyles = config.css_styles || this._cssStyles;
-        console.log(`Loaded configuration via service for card: ${this._cardId}`);
+        console.log('Received saved config:', config);
+        
+        if (config && Object.keys(config).length > 0) {
+          // Use saved configuration
+          this._userCode = config.user_code || '';
+          this._htmlTemplate = config.html_template || '';
+          this._cssStyles = config.css_styles || '';
+          console.log(`✅ Loaded SAVED configuration for card: ${this._cardId}`);
+        } else {
+          // Use defaults from config
+          this._applyDefaults();
+        }
+        
         this.requestUpdate();
         
         // Remove event listener after handling
@@ -323,6 +357,13 @@ export class UniversalControllerCard extends LitElement {
       if (this.hass && this.hass.callService) {
         // Add event listener for the service response
         this.hass.connection?.addEventListener('universal_controller_config_loaded', handleConfigLoaded);
+        
+        // Add timeout fallback
+        setTimeout(() => {
+          console.warn('Config load timeout, applying defaults');
+          this._applyDefaults();
+          this.requestUpdate();
+        }, 5000);
         
         this.hass.callService('universal_controller', 'load_config', {
           card_id: this._cardId
@@ -339,6 +380,13 @@ export class UniversalControllerCard extends LitElement {
     }
   }
   
+  private _applyDefaults(): void {
+    console.log('Applying default configuration values');
+    this._userCode = this.config.user_code || '';
+    this._htmlTemplate = this.config.html_template || '';
+    this._cssStyles = this.config.css_styles || '';
+  }
+  
   private _loadFromLocalStorage(): void {
     // Fallback to localStorage
     try {
@@ -346,13 +394,19 @@ export class UniversalControllerCard extends LitElement {
       const saved = localStorage.getItem(storageKey);
       if (saved) {
         const data = JSON.parse(saved);
-        this._userCode = data.userCode || this._userCode;
-        this._htmlTemplate = data.htmlTemplate || this._htmlTemplate;
-        this._cssStyles = data.cssStyles || this._cssStyles;
-        console.log(`Loaded configuration from localStorage for card: ${this._cardId}`);
+        this._userCode = data.userCode || '';
+        this._htmlTemplate = data.htmlTemplate || '';
+        this._cssStyles = data.cssStyles || '';
+        console.log(`✅ Loaded configuration from localStorage for card: ${this._cardId}`);
+      } else {
+        // No saved data, use defaults
+        this._applyDefaults();
       }
+      this.requestUpdate();
     } catch (error) {
       console.error('Failed to load from localStorage:', error);
+      this._applyDefaults();
+      this.requestUpdate();
     }
   }
 
@@ -610,13 +664,13 @@ return {
   }
 
   getCardSize(): number {
-    return 6;
+    // Return configurable height (default to 6 if not specified)
+    return this.config?.card_height || 6;
   }
 
   // Required for Home Assistant card picker
   static getConfigElement() {
-    // For now, return null - users can configure in the GUI
-    return null;
+    return document.createElement('universal-controller-card-editor');
   }
 
   static getStubConfig() {
@@ -671,9 +725,143 @@ declare global {
   description: 'A customizable card with TypeScript code execution, HTML templates, and CSS styling',
 });
 
-// Debug logging
+// Configuration editor for the card
+@customElement('universal-controller-card-editor')
+class UniversalControllerCardEditor extends LitElement {
+  @property({ attribute: false }) public hass!: HomeAssistant;
+  @property() private _config!: UniversalControllerConfig;
+
+  public setConfig(config: UniversalControllerConfig): void {
+    this._config = config;
+  }
+
+  protected render() {
+    if (!this.hass || !this._config) {
+      return html``;
+    }
+
+    return html`
+      <div class="card-config">
+        <div class="option">
+          <ha-textfield
+            label="Card Name"
+            .value=${this._config.name || ''}
+            .configValue=${'name'}
+            @input=${this._valueChanged}
+          ></ha-textfield>
+        </div>
+
+        <div class="option">
+          <label>Card Width:</label>
+          <ha-select
+            .value=${this._config.card_width || '2/4'}
+            .configValue=${'card_width'}
+            @selected=${this._valueChanged}
+          >
+            <mwc-list-item value="1/4">Quarter (25%)</mwc-list-item>
+            <mwc-list-item value="2/4">Half (50%)</mwc-list-item>
+            <mwc-list-item value="3/4">Three Quarters (75%)</mwc-list-item>
+            <mwc-list-item value="4/4">Full Width (100%)</mwc-list-item>
+          </ha-select>
+        </div>
+
+        <div class="option">
+          <ha-textfield
+            label="Card Height (grid rows)"
+            type="number"
+            min="1"
+            max="10"
+            .value=${this._config.card_height || 3}
+            .configValue=${'card_height'}
+            @input=${this._valueChanged}
+          ></ha-textfield>
+        </div>
+
+        <div class="option">
+          <ha-textfield
+            label="Update Interval (seconds)"
+            type="number"
+            min="1"
+            max="300"
+            .value=${(this._config.update_interval || 30000) / 1000}
+            .configValue=${'update_interval_seconds'}
+            @input=${this._valueChanged}
+          ></ha-textfield>
+        </div>
+
+        <div class="option">
+          <ha-formfield label="Show Code Editor">
+            <ha-checkbox
+              .checked=${this._config.show_code_editor !== false}
+              .configValue=${'show_code_editor'}
+              @change=${this._valueChanged}
+            ></ha-checkbox>
+          </ha-formfield>
+        </div>
+      </div>
+    `;
+  }
+
+  private _valueChanged(ev: any): void {
+    if (!this._config || !this.hass) {
+      return;
+    }
+
+    const target = ev.target;
+    const configValue = target.configValue;
+    let value = target.type === 'checkbox' ? target.checked : target.value;
+
+    // Convert update interval from seconds to milliseconds
+    if (configValue === 'update_interval_seconds') {
+      value = parseInt(value) * 1000;
+      this._config = {
+        ...this._config,
+        update_interval: value,
+      };
+    } else if (configValue === 'card_height') {
+      value = parseInt(value);
+      this._config = {
+        ...this._config,
+        [configValue]: value,
+      };
+    } else {
+      this._config = {
+        ...this._config,
+        [configValue]: value,
+      };
+    }
+
+    const event = new CustomEvent('config-changed', {
+      detail: { config: this._config },
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
+  }
+
+  static get styles() {
+    return css`
+      .card-config {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .option {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .option label {
+        margin-bottom: 4px;
+        font-weight: 500;
+      }
+    `;
+  }
+}
+
 console.info(
-  `%c  UNIVERSAL-CONTROLLER-CARD  \n%c Version 1.3.3 `,
+  `%c  UNIVERSAL-CONTROLLER-CARD  \n%c Version 1.3.7 `,
   'color: orange; font-weight: bold; background: black',
   'color: white; font-weight: bold; background: dimgray',
 );
