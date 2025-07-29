@@ -25,6 +25,42 @@ update_ticker:
       required: true
       selector:
         text:
+    name:
+      name: Ticker Name
+      description: Human-readable name for this ticker
+      required: false
+      selector:
+        text:
+    user_code:
+      name: User Code
+      description: TypeScript/JavaScript code to execute
+      required: false
+      selector:
+        text:
+          multiline: true
+    html_template:
+      name: HTML Template
+      description: HTML template with placeholder variables
+      required: false
+      selector:
+        text:
+          multiline: true
+    css_styles:
+      name: CSS Styles
+      description: CSS styles for the rendered content
+      required: false
+      selector:
+        text:
+          multiline: true
+    update_interval:
+      name: Update Interval
+      description: How often to execute the code (in seconds)
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 3600
+          unit_of_measurement: "seconds"
     enabled:
       name: Enabled
       description: Whether this ticker should run automatically

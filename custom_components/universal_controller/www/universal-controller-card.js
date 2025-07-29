@@ -335,9 +335,13 @@ let UniversalControllerCard = class UniversalControllerCard extends i {
     setConfig(config) {
         this.config = config;
         this._showCodeEditor = config.show_code_editor ?? true;
-        // DON'T initialize with config defaults yet - wait for saved config first
-        // Load saved configuration immediately
-        this._loadConfiguration();
+        // If we have a ticker_id, load from ticker, otherwise use legacy system
+        if (config.ticker_id) {
+            this._loadTickerConfiguration();
+        }
+        else {
+            this._loadConfiguration();
+        }
     }
     firstUpdated() {
         // Set up periodic updates
@@ -407,11 +411,65 @@ let UniversalControllerCard = class UniversalControllerCard extends i {
             this._loadFromLocalStorage();
         }
     }
+    async _loadTickerConfiguration() {
+        console.log(`Loading ticker configuration for ticker_id: ${this.config.ticker_id}`);
+        try {
+            if (this.hass && this.hass.callService && this.config.ticker_id) {
+                // Call the new get_ticker service
+                const response = await this.hass.callService('universal_controller', 'get_ticker', {
+                    ticker_id: this.config.ticker_id
+                });
+                if (response && response.config) {
+                    const tickerConfig = response.config;
+                    this._userCode = tickerConfig.user_code || '';
+                    this._htmlTemplate = tickerConfig.html_template || '';
+                    this._cssStyles = tickerConfig.css_styles || '';
+                    console.log(`✅ Loaded ticker configuration for: ${this.config.ticker_id}`);
+                }
+                else {
+                    console.warn(`No configuration found for ticker: ${this.config.ticker_id}`);
+                    this._applyDefaults();
+                }
+                this.requestUpdate();
+            }
+        }
+        catch (error) {
+            console.error('Failed to load ticker configuration:', error);
+            this._applyDefaults();
+            this.requestUpdate();
+        }
+    }
     _applyDefaults() {
         console.log('Applying default configuration values');
-        this._userCode = this.config.user_code || '';
-        this._htmlTemplate = this.config.html_template || '';
-        this._cssStyles = this.config.css_styles || '';
+        this._userCode = this.config.user_code || `// TypeScript/JavaScript code that runs periodically
+// Full access to Home Assistant API
+
+const lights = Object.values(hass.states).filter(entity => 
+    entity.entity_id.startsWith('light.')
+);
+
+console.log(\`Found \${lights.length} lights\`);
+
+return {
+    lights_count: lights.length,
+    current_time: new Date().toISOString()
+};`;
+        this._htmlTemplate = this.config.html_template || `<div class="universal-controller">
+  <h3>Universal Controller</h3>
+  <p>Lights found: {{lights_count}}</p>
+  <p>Current time: {{current_time}}</p>
+</div>`;
+        this._cssStyles = this.config.css_styles || `.universal-controller {
+  background: var(--card-background-color);
+  border-radius: 8px;
+  padding: 16px;
+  color: var(--primary-text-color);
+}
+
+.universal-controller h3 {
+  margin-top: 0;
+  color: var(--primary-color);
+}`;
     }
     _loadFromLocalStorage() {
         // Fallback to localStorage
@@ -485,15 +543,27 @@ let UniversalControllerCard = class UniversalControllerCard extends i {
         return await func(...contextValues);
     }
     async _saveConfiguration() {
-        // Use Universal Controller service for persistence
         try {
-            await this.hass.callService('universal_controller', 'save_config', {
-                card_id: this._cardId,
-                user_code: this._userCode,
-                html_template: this._htmlTemplate,
-                css_styles: this._cssStyles
-            });
-            console.log(`Configuration saved via service for card: ${this._cardId}`);
+            // If we have a ticker_id, update the ticker, otherwise use legacy save
+            if (this.config.ticker_id) {
+                await this.hass.callService('universal_controller', 'update_ticker', {
+                    ticker_id: this.config.ticker_id,
+                    user_code: this._userCode,
+                    html_template: this._htmlTemplate,
+                    css_styles: this._cssStyles
+                });
+                console.log(`Ticker configuration updated for: ${this.config.ticker_id}`);
+            }
+            else {
+                // Legacy save_config for backwards compatibility
+                await this.hass.callService('universal_controller', 'save_config', {
+                    card_id: this._cardId,
+                    user_code: this._userCode,
+                    html_template: this._htmlTemplate,
+                    css_styles: this._cssStyles
+                });
+                console.log(`Configuration saved via legacy service for card: ${this._cardId}`);
+            }
             // Show success notification
             if (this.hass.connection) {
                 await this.hass.connection.sendMessagePromise({
@@ -505,30 +575,15 @@ let UniversalControllerCard = class UniversalControllerCard extends i {
             }
         }
         catch (error) {
-            console.error('Failed to save configuration via service:', error);
-            // Fallback to localStorage
-            try {
-                const data = {
-                    userCode: this._userCode,
-                    htmlTemplate: this._htmlTemplate,
-                    cssStyles: this._cssStyles,
-                    timestamp: Date.now()
-                };
-                const storageKey = `universal_controller_${this._cardId}`;
-                localStorage.setItem(storageKey, JSON.stringify(data));
-                console.log(`Configuration saved to localStorage for card: ${this._cardId}`);
-            }
-            catch (fallbackError) {
-                console.error('Failed to save to localStorage:', fallbackError);
-                // Show error notification
-                if (this.hass.connection) {
-                    await this.hass.connection.sendMessagePromise({
-                        type: 'persistent_notification/create',
-                        notification_id: `universal_controller_error_${this._cardId}`,
-                        title: 'Universal Controller Error',
-                        message: `Failed to save: ${error}`
-                    });
-                }
+            console.error('Failed to save configuration:', error);
+            // Show error notification
+            if (this.hass.connection) {
+                await this.hass.connection.sendMessagePromise({
+                    type: 'persistent_notification/create',
+                    notification_id: `universal_controller_error_${this._cardId}`,
+                    title: 'Universal Controller Error',
+                    message: `Failed to save: ${error}`
+                });
             }
         }
     }
