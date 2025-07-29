@@ -862,7 +862,7 @@ class UniversalControllerCardEditor extends LitElement {
 }
 
 console.info(
-  `%c  UNIVERSAL-CONTROLLER-CARD  \n%c Version 1.4.0 `,
+  `%c  UNIVERSAL-CONTROLLER-CARD  \n%c Version 1.4.1 `,
   'color: orange; font-weight: bold; background: black',
   'color: white; font-weight: bold; background: dimgray',
 );

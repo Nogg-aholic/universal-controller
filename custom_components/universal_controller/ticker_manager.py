@@ -24,6 +24,7 @@ class TickerManager:
         self.hass = hass
         self._tickers: Dict[str, UniversalControllerTicker] = {}
         self._store = storage.Store(hass, TICKER_STORAGE_VERSION, TICKER_STORAGE_KEY)
+        self._ticker_added_callbacks = []
 
     async def async_setup(self) -> None:
         """Set up the ticker manager."""
@@ -75,6 +76,18 @@ class TickerManager:
         except Exception as e:
             _LOGGER.error(f"Error saving tickers: {e}")
 
+    def register_ticker_added_callback(self, callback) -> None:
+        """Register a callback for when a ticker is added."""
+        self._ticker_added_callbacks.append(callback)
+
+    def _notify_ticker_added(self, ticker_id: str, ticker: UniversalControllerTicker) -> None:
+        """Notify all callbacks that a ticker was added."""
+        for callback in self._ticker_added_callbacks:
+            try:
+                callback(ticker_id, ticker)
+            except Exception as e:
+                _LOGGER.error(f"Error calling ticker added callback: {e}")
+
     async def create_ticker(
         self,
         ticker_id: str,
@@ -103,9 +116,8 @@ class TickerManager:
 
         self._tickers[ticker_id] = ticker
         
-        # Add entity to Home Assistant
-        entity_id = f"sensor.{DOMAIN}_ticker_{ticker_id}"
-        self.hass.states.async_set(entity_id, ticker.state, ticker.extra_state_attributes)
+        # Notify callbacks for entity creation
+        self._notify_ticker_added(ticker_id, ticker)
 
         # Start the ticker if enabled
         if enabled:

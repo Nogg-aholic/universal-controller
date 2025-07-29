@@ -49,6 +49,9 @@ class UniversalControllerTicker(Entity):
         self._last_error = None
         self._cancel_interval = None
         
+        # Callback management
+        self._update_callbacks = []
+        
         # Entity attributes
         self._attr_unique_id = f"{DOMAIN}_ticker_{ticker_id}"
         self._attr_name = f"Universal Controller Ticker: {name}"
@@ -74,6 +77,79 @@ class UniversalControllerTicker(Entity):
             "last_result": self._last_result,
             "last_error": self._last_error,
         }
+    
+    def register_update_callback(self, callback) -> None:
+        """Register a callback for ticker updates."""
+        self._update_callbacks.append(callback)
+    
+    def unregister_update_callback(self, callback) -> None:
+        """Unregister a callback for ticker updates."""
+        if callback in self._update_callbacks:
+            self._update_callbacks.remove(callback)
+    
+    def _notify_update_callbacks(self) -> None:
+        """Notify all registered update callbacks."""
+        for callback in self._update_callbacks:
+            try:
+                callback()
+            except Exception as e:
+                _LOGGER.error(f"Error calling update callback: {e}")
+    
+    # Property accessors for external access
+    @property
+    def ticker_id(self) -> str:
+        """Return the ticker ID."""
+        return self._ticker_id
+    
+    @property 
+    def name(self) -> str:
+        """Return the ticker name.""" 
+        return self._name
+    
+    @property
+    def enabled(self) -> bool:
+        """Return if ticker is enabled."""
+        return self._enabled
+    
+    @property
+    def update_interval(self) -> int:
+        """Return the update interval."""
+        return self._update_interval
+    
+    @property
+    def last_execution(self) -> Optional[datetime]:
+        """Return the last execution time."""
+        return self._last_execution
+    
+    @property
+    def last_result(self) -> Any:
+        """Return the last execution result."""
+        return self._last_result
+    
+    @property
+    def last_error(self) -> Optional[str]:
+        """Return the last execution error."""
+        return self._last_error
+    
+    @property
+    def execution_count(self) -> int:
+        """Return the execution count."""
+        return self._execution_count
+    
+    @property
+    def user_code(self) -> str:
+        """Return the user code."""
+        return self._user_code
+    
+    @property
+    def html_template(self) -> str:
+        """Return the HTML template."""
+        return self._html_template
+    
+    @property
+    def css_styles(self) -> str:
+        """Return the CSS styles."""
+        return self._css_styles
     
     async def async_added_to_hass(self) -> None:
         """When entity is added to hass."""
@@ -184,6 +260,7 @@ class UniversalControllerTicker(Entity):
         
         finally:
             self.async_write_ha_state()
+            self._notify_update_callbacks()
         
         return self._last_result or {"error": self._last_error}
     

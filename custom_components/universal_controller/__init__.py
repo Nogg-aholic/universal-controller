@@ -62,6 +62,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "ticker_manager": ticker_manager,
     }
     
+    # Forward entry setup to sensor platform
+    await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
+    
     # Register services
     await _async_register_services(hass, store, ticker_manager)
     
@@ -276,6 +279,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     _LOGGER.info(f"Unloading Universal Controller entry: {entry.entry_id}")
     
+    # Unload platforms
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor"])
+    
     # Unload ticker manager
     if DOMAIN in hass.data and entry.entry_id in hass.data[DOMAIN]:
         entry_data = hass.data[DOMAIN][entry.entry_id]
@@ -303,4 +309,4 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.services.async_remove(DOMAIN, "register_frontend")
             _LOGGER.info("Universal Controller services removed")
     
-    return True
+    return unload_ok

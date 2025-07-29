@@ -881,7 +881,7 @@ __decorate([
 UniversalControllerCardEditor = __decorate([
     t('universal-controller-card-editor')
 ], UniversalControllerCardEditor);
-console.info(`%c  UNIVERSAL-CONTROLLER-CARD  \n%c Version 1.4.0 `, 'color: orange; font-weight: bold; background: black', 'color: white; font-weight: bold; background: dimgray');
+console.info(`%c  UNIVERSAL-CONTROLLER-CARD  \n%c Version 1.4.1 `, 'color: orange; font-weight: bold; background: black', 'color: white; font-weight: bold; background: dimgray');
 console.log('Universal Controller Card registered:', CARD_NAME);
 console.log('customCards:', window.customCards);
 
