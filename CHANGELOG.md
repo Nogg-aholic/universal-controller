@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.4.2] - 2025-07-29
+
+### Bug Fixes
+- Service configuration improvements and stability enhancements
+
 ## [1.4.0] - 2025-07-29
 
 ### Major Architecture Change: Service-Centric Design

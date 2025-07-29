@@ -79,11 +79,13 @@ async def _async_register_services(hass: HomeAssistant, store: storage.Store, ti
         """Create a new Universal Controller ticker."""
         ticker_id = call.data.get("ticker_id")
         name = call.data.get("name")
-        user_code = call.data.get("user_code", "")
-        html_template = call.data.get("html_template", "")
-        css_styles = call.data.get("css_styles", "")
-        update_interval = call.data.get("update_interval", 30)
-        enabled = call.data.get("enabled", True)
+        
+        # Use simple defaults - card will handle configuration
+        user_code = "// TypeScript/JavaScript code that runs periodically\n// Full access to Home Assistant API\n\nconsole.log('Ticker running:', new Date().toISOString());\n\nreturn {\n  message: 'Hello from Universal Controller!',\n  timestamp: new Date().toISOString()\n};"
+        html_template = "<div>\n  <h3>{{data.message}}</h3>\n  <p>Last updated: {{data.timestamp}}</p>\n</div>"
+        css_styles = "div { padding: 16px; }\nh3 { color: var(--primary-text-color); }\np { color: var(--secondary-text-color); }"
+        update_interval = 30
+        enabled = True
         
         if not ticker_id or not name:
             _LOGGER.error("ticker_id and name are required for create_ticker service")
