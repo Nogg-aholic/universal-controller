@@ -1,0 +1,52 @@
+save_config:
+  name: Save Configuration
+  description: Save configuration for a Universal Controller card
+  fields:
+    card_id:
+      name: Card ID
+      description: Unique identifier for the card
+      required: true
+      selector:
+        text:
+    user_code:
+      name: User Code
+      description: TypeScript/JavaScript code to execute
+      required: false
+      selector:
+        text:
+          multiline: true
+    html_template:
+      name: HTML Template
+      description: HTML template with placeholder variables
+      required: false
+      selector:
+        text:
+          multiline: true
+    css_styles:
+      name: CSS Styles
+      description: CSS styles for the rendered content
+      required: false
+      selector:
+        text:
+          multiline: true
+
+load_config:
+  name: Load Configuration
+  description: Load configuration for a Universal Controller card
+  fields:
+    card_id:
+      name: Card ID
+      description: Unique identifier for the card
+      required: true
+      selector:
+        text:
+
+get_all_configs:
+  name: Get All Configurations
+  description: Retrieve all stored Universal Controller configurations
+  fields: {}
+
+register_frontend:
+  name: Register Frontend
+  description: Manually register the Universal Controller frontend (useful after updates)
+  fields: {}

@@ -17,20 +17,41 @@ _LOGGER = logging.getLogger(__name__)
 STORAGE_VERSION = 1
 STORAGE_KEY = f"{DOMAIN}_configs"
 
+# Global flag to track frontend registration
+_FRONTEND_REGISTERED = False
+
+
+async def _ensure_frontend_registered(hass: HomeAssistant) -> None:
+    """Ensure frontend is registered, handling updates gracefully."""
+    global _FRONTEND_REGISTERED
+    if not _FRONTEND_REGISTERED:
+        try:
+            await async_register_frontend(hass)
+            _FRONTEND_REGISTERED = True
+            _LOGGER.info("✅ Frontend registration completed")
+        except Exception as e:
+            _LOGGER.error(f"❌ Frontend registration failed: {e}")
+            # Don't raise - let the integration continue to work
+    else:
+        _LOGGER.debug("🔄 Frontend already registered, skipping")
+
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the Universal Controller integration."""
-    _LOGGER.info("Setting up Universal Controller integration")
+    _LOGGER.info("🔧 async_setup called - Setting up Universal Controller integration")
     
-    # Register frontend components early
-    await async_register_frontend(hass)
+    # Ensure frontend is registered
+    await _ensure_frontend_registered(hass)
     
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Universal Controller from a config entry."""
-    _LOGGER.info(f"Setting up Universal Controller entry: {entry.entry_id}")
+    _LOGGER.info(f"🔧 async_setup_entry called - Setting up Universal Controller entry: {entry.entry_id}")
+    
+    # Ensure frontend is registered (critical for updates!)
+    await _ensure_frontend_registered(hass)
     
     # Initialize storage
     store = storage.Store(hass, STORAGE_VERSION, STORAGE_KEY)
@@ -106,10 +127,16 @@ async def _async_register_services(hass: HomeAssistant, store: storage.Store) ->
             "configs": data
         })
     
+    async def register_frontend(call: ServiceCall) -> None:
+        """Manually register the frontend (useful for updates)."""
+        _LOGGER.info("🔧 Manual frontend registration requested")
+        await _ensure_frontend_registered(hass)
+    
     # Register services
     hass.services.async_register(DOMAIN, "save_config", save_config)
     hass.services.async_register(DOMAIN, "load_config", load_config)
     hass.services.async_register(DOMAIN, "get_all_configs", get_all_configs)
+    hass.services.async_register(DOMAIN, "register_frontend", register_frontend)
     
     _LOGGER.info("Universal Controller services registered")
 
@@ -127,6 +154,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.services.async_remove(DOMAIN, "save_config")
             hass.services.async_remove(DOMAIN, "load_config") 
             hass.services.async_remove(DOMAIN, "get_all_configs")
+            hass.services.async_remove(DOMAIN, "register_frontend")
             _LOGGER.info("Universal Controller services removed")
     
     return True

@@ -56,6 +56,8 @@ class UniversalControllerView(HomeAssistantView):
 async def async_register_frontend(hass: HomeAssistant) -> None:
     """Register the frontend components."""
     try:
+        _LOGGER.info("🚀 REGISTERING UNIVERSAL CONTROLLER FRONTEND")
+        
         # Register the view to serve the JavaScript file
         view = UniversalControllerView(hass)
         hass.http.register_view(view)
@@ -64,9 +66,10 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
         frontend_url = f"{FRONTEND_URL_PATH}/{FRONTEND_FILE_PATH}"
         add_extra_js_url(hass, frontend_url)
         
-        _LOGGER.info(f"✅ Registered Universal Controller frontend at {frontend_url}")
-        _LOGGER.info(f"✅ Card should be available as 'custom:universal-controller-card'")
+        _LOGGER.info(f"✅ FRONTEND REGISTERED: {frontend_url}")
+        _LOGGER.info(f"✅ CARD TYPE: 'custom:universal-controller-card'")
+        _LOGGER.info(f"🎯 CHECK YOUR BROWSER CONSOLE FOR CARD REGISTRATION LOGS")
         
     except Exception as e:
-        _LOGGER.error(f"❌ Failed to register frontend: {e}")
+        _LOGGER.error(f"❌ FRONTEND REGISTRATION FAILED: {e}")
         raise

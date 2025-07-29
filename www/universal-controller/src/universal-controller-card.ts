@@ -45,6 +45,7 @@ export class UniversalControllerCard extends LitElement {
     super();
     // Generate unique ID for this card instance
     this._cardId = `uc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log(`Universal Controller Card created with ID: ${this._cardId}`);
   }
 
   static get styles() {
@@ -620,7 +621,7 @@ return {
 
   static getStubConfig() {
     return {
-      type: 'custom:universal-controller-card',
+      type: `custom:${CARD_NAME}`,
       name: 'Universal Controller',
       user_code: `// TypeScript/JavaScript code that runs periodically
 // Full access to Home Assistant API
@@ -669,3 +670,12 @@ declare global {
   preview: false,
   description: 'A customizable card with TypeScript code execution, HTML templates, and CSS styling',
 });
+
+// Debug logging
+console.info(
+  `%c  UNIVERSAL-CONTROLLER-CARD  \n%c Version 1.3.3 `,
+  'color: orange; font-weight: bold; background: black',
+  'color: white; font-weight: bold; background: dimgray',
+);
+console.log('Universal Controller Card registered:', CARD_NAME);
+console.log('customCards:', (window as any).customCards);
