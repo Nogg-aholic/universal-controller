@@ -17,23 +17,16 @@ _LOGGER = logging.getLogger(__name__)
 STORAGE_VERSION = 1
 STORAGE_KEY = f"{DOMAIN}_configs"
 
-# Global flag to track frontend registration
-_FRONTEND_REGISTERED = False
-
 
 async def _ensure_frontend_registered(hass: HomeAssistant) -> None:
     """Ensure frontend is registered, handling updates gracefully."""
-    global _FRONTEND_REGISTERED
-    if not _FRONTEND_REGISTERED:
-        try:
-            await async_register_frontend(hass)
-            _FRONTEND_REGISTERED = True
-            _LOGGER.info("✅ Frontend registration completed")
-        except Exception as e:
-            _LOGGER.error(f"❌ Frontend registration failed: {e}")
-            # Don't raise - let the integration continue to work
-    else:
-        _LOGGER.debug("🔄 Frontend already registered, skipping")
+    try:
+        _LOGGER.info("🚀 FORCING frontend registration...")
+        await async_register_frontend(hass)
+        _LOGGER.info("✅ Frontend registration completed")
+    except Exception as e:
+        _LOGGER.error(f"❌ Frontend registration failed: {e}")
+        # Don't raise - let the integration continue to work
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:

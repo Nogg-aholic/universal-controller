@@ -56,20 +56,36 @@ class UniversalControllerView(HomeAssistantView):
 async def async_register_frontend(hass: HomeAssistant) -> None:
     """Register the frontend components."""
     try:
-        _LOGGER.info("🚀 REGISTERING UNIVERSAL CONTROLLER FRONTEND")
+        _LOGGER.info("🚀 STARTING FRONTEND REGISTRATION")
+        
+        # Check if file exists first
+        integration_dir = os.path.dirname(__file__)
+        js_file_path = os.path.join(integration_dir, "www", "universal-controller-card.js")
+        
+        if not os.path.exists(js_file_path):
+            _LOGGER.error(f"❌ JAVASCRIPT FILE NOT FOUND: {js_file_path}")
+            raise FileNotFoundError(f"Frontend file not found: {js_file_path}")
+        
+        file_size = os.path.getsize(js_file_path)
+        _LOGGER.info(f"📁 Found JS file: {js_file_path} ({file_size} bytes)")
         
         # Register the view to serve the JavaScript file
         view = UniversalControllerView(hass)
         hass.http.register_view(view)
+        _LOGGER.info(f"🌐 HTTP view registered: {view.url}")
         
         # Add the JavaScript URL to Home Assistant frontend
         frontend_url = f"{FRONTEND_URL_PATH}/{FRONTEND_FILE_PATH}"
         add_extra_js_url(hass, frontend_url)
+        _LOGGER.info(f"🔗 JS URL added to frontend: {frontend_url}")
         
-        _LOGGER.info(f"✅ FRONTEND REGISTERED: {frontend_url}")
-        _LOGGER.info(f"✅ CARD TYPE: 'custom:universal-controller-card'")
-        _LOGGER.info(f"🎯 CHECK YOUR BROWSER CONSOLE FOR CARD REGISTRATION LOGS")
+        _LOGGER.info(f"✅ FRONTEND REGISTRATION COMPLETE")
+        _LOGGER.info(f"🎯 CARD TYPE: 'custom:universal-controller-card'")
+        _LOGGER.info(f"🔍 CHECK BROWSER CONSOLE FOR CARD LOGS")
         
     except Exception as e:
         _LOGGER.error(f"❌ FRONTEND REGISTRATION FAILED: {e}")
+        _LOGGER.error(f"🔥 Exception type: {type(e).__name__}")
+        import traceback
+        _LOGGER.error(f"🔥 Traceback: {traceback.format_exc()}")
         raise
